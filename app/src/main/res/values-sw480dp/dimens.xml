@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The common TV case: 1080p at 320 dpi (960x540dp) and 720p / 1080p at 240 dpi. -->
+<resources>
+    <dimen name="screen_padding_h">48dp</dimen>
+    <dimen name="screen_padding_v">32dp</dimen>
+    <dimen name="tile_width">144dp</dimen>
+    <dimen name="tile_banner_height">74dp</dimen>
+    <dimen name="event_card_width">136dp</dimen>
+    <dimen name="clock_text">46sp</dimen>
+    <dimen name="date_text">18sp</dimen>
+    <dimen name="weather_temp_text">36sp</dimen>
+    <dimen name="weather_desc_text">16sp</dimen>
+    <dimen name="weather_desc_max_width">360dp</dimen>
+    <dimen name="header_button_text">15sp</dimen>
+    <dimen name="ac_button_height">32dp</dimen>
+    <dimen name="ac_button_text">14sp</dimen>
+    <dimen name="ac_temp_text">24sp</dimen>
+    <dimen name="ac_temp_min_width">54dp</dimen>
+</resources>

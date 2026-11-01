@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/acCard"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="14dp"
+    android:orientation="vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/card_bg"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/acName"
+        android:nextFocusDown="@+id/acPower"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:background="@drawable/ac_button"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:clickable="true"
+        android:textSize="11sp"
+        android:textColor="@color/text_primary"
+        android:textAllCaps="true"
+        android:letterSpacing="0.06" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/acPower"
+            android:nextFocusUp="@+id/acName"
+            style="@style/AcButton"
+            android:minWidth="36dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:src="@drawable/ic_power"
+            android:contentDescription="@string/ac_power" />
+        <TextView android:id="@+id/acMinus"
+            android:nextFocusUp="@+id/acName" style="@style/AcButton" android:text="−" android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/acTemp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="@dimen/ac_temp_min_width"
+            android:gravity="center"
+            android:textSize="@dimen/ac_temp_text"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-light" />
+
+        <TextView android:id="@+id/acPlus"
+            android:nextFocusUp="@+id/acName" style="@style/AcButton" android:text="+" android:textSize="18sp" />
+        <TextView android:id="@+id/acMode"
+            android:nextFocusUp="@+id/acName" style="@style/AcButton" />
+        <TextView android:id="@+id/acFan"
+            android:nextFocusUp="@+id/acName" style="@style/AcButton" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/acRoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary" />
+</LinearLayout>

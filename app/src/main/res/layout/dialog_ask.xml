@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/askMic"
+            style="@style/AcButton"
+            android:layout_height="40dp"
+            android:text="@string/ask_speak"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/askInput"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:hint="@string/ask_hint"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:inputType="textCapSentences"
+            android:imeOptions="actionSend"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/askSend"
+            style="@style/AcButton"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="0dp"
+            android:text="@string/ask_send"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/askStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:visibility="gone" />
+
+    <ScrollView
+        android:id="@+id/askScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:fillViewport="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:fadeScrollbars="false">
+
+        <TextView
+            android:id="@+id/askAnswer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="19sp"
+            android:lineSpacingExtra="5dp"
+            android:textColor="@color/text_primary" />
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/askActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+</LinearLayout>

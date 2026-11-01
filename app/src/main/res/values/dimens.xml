@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Narrow screens: smallest width under 480dp, e.g. 1080p at 480 dpi (640x360dp). -->
+<resources>
+    <dimen name="screen_padding_h">24dp</dimen>
+    <dimen name="screen_padding_v">16dp</dimen>
+    <dimen name="tile_width">110dp</dimen>
+    <dimen name="tile_banner_height">56dp</dimen>
+    <dimen name="event_card_width">120dp</dimen>
+    <dimen name="clock_text">30sp</dimen>
+    <dimen name="date_text">13sp</dimen>
+    <dimen name="weather_temp_text">26sp</dimen>
+    <dimen name="weather_desc_text">13sp</dimen>
+    <dimen name="weather_desc_max_width">170dp</dimen>
+    <dimen name="header_button_text">13sp</dimen>
+    <dimen name="ac_button_height">28dp</dimen>
+    <dimen name="ac_button_text">12sp</dimen>
+    <dimen name="ac_temp_text">18sp</dimen>
+    <dimen name="ac_temp_min_width">44dp</dimen>
+</resources>

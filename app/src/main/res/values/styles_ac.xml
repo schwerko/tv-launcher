@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AcButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">@dimen/ac_button_height</item>
+        <item name="android:minWidth">@dimen/ac_button_height</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="android:background">@drawable/ac_button</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:textSize">@dimen/ac_button_text</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+</resources>

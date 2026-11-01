@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <ImageView
+        android:id="@+id/imageBack"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="invisible"
+        android:importantForAccessibility="no" />
+
+    <ImageView
+        android:id="@+id/imageFront"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="invisible"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/caption_scrim" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="48dp"
+        android:layout_marginBottom="40dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/captionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="26sp"
+            android:textColor="#FFFFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowRadius="6" />
+
+        <TextView
+            android:id="@+id/captionPlace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="17sp"
+            android:textColor="#CCFFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowRadius="6" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/dreamClock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="48dp"
+        android:textSize="34sp"
+        android:textColor="#FFFFFFFF"
+        android:fontFamily="sans-serif-light"
+        android:shadowColor="#80000000"
+        android:shadowRadius="8" />
+</FrameLayout>
