@@ -194,3 +194,7 @@ Focus the **Settings** button at the top right and press OK:
 - Cielo AC: paste the API key (changing it forgets the old token and unit).
 - Show hidden apps: unhides everything you've hidden.
 - Android settings / Choose default launcher: shortcuts into system settings.
+
+## Licence
+
+MIT, see `LICENSE`. Photos shown by the app keep their own licences (Wikimedia Commons credits, Unsplash terms).
