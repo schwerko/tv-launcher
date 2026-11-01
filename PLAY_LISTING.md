@@ -1,9 +1,8 @@
 # Google Play listing material
 
 Everything the Play Console asks for when the app is submitted, ready to paste. Assets are in
-[`store/`](store/). The privacy policy is [`PRIVACY.md`](PRIVACY.md); Play needs it at a public
-URL, so put that file on a web page (a GitHub repository renders it) and paste the link into
-**App content › Privacy policy**.
+[`store/`](store/). The privacy policy is [`PRIVACY.md`](PRIVACY.md); its public URL for
+**App content › Privacy policy** is https://github.com/schwerko/tv-launcher/blob/main/PRIVACY.md.
 
 ## Store listing
 

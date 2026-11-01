@@ -6,25 +6,9 @@ Everything below needs your accounts or your decisions, so it could not be done 
 
 `~/android-toolchain/keys/tvlauncher-upload-key-backup.zip` holds the keystore and its passwords. Put it in your password manager (as an attachment) or an encrypted cloud folder. If it is ever lost, the published app can never be updated again.
 
-## 2. Put the repository on GitHub (10 minutes)
+## 2. GitHub — done
 
-The project is a git repository with one commit (`main`). Secrets (`keystore.properties`, `*.jks`), build outputs and the stray `tv-launcher.apk` are ignored. The GitHub CLI is not installed on this Mac, so create the repository in the browser: github.com → New repository → name `tv-launcher`, **public** (the privacy policy must be reachable without logging in), no README. Then:
-
-```bash
-cd "/Users/azura/Claude Code/tv-launcher"
-```
-
-```bash
-git remote add origin https://github.com/<your-github-user>/tv-launcher.git
-```
-
-```bash
-git push -u origin main
-```
-
-Your privacy-policy URL is then
-`https://github.com/<your-github-user>/tv-launcher/blob/main/PRIVACY.md`
-(or make it prettier later with GitHub Pages). If you prefer the code private, create a public **gist** containing just `PRIVACY.md` and use the gist's URL instead.
+The code is public at https://github.com/schwerko/tv-launcher (MIT licence). The push token is stored in the macOS keychain, so later pushes are just `git push` from the project folder. The privacy-policy URL for Play is https://github.com/schwerko/tv-launcher/blob/main/PRIVACY.md.
 
 ## 3. Google Play developer account (15 minutes + a few days' wait)
 
