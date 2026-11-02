@@ -106,9 +106,10 @@ ties the app to this key, and a lost key means a new app listing. Without
 locally, but Play will reject such a bundle. Minification is off on purpose (no ProGuard rules
 have been written for this app). Bump `versionCode` in `app/build.gradle.kts` for every upload.
 
-Closed-test bundles are built with `./gradlew bundleRelease -PtvOnly=false`: that marks Android
-TV as optional so testers who only have a phone can install the test build (Play's 12-tester
-rule). Production bundles are built without the flag and stay TV-only.
+The app installs on Android TV, phones and tablets (on a phone or tablet it is a plain app
+grid with the clock, weather and calendar, and can be set as the device's home app for a
+kiosk-style front screen). `./gradlew bundleRelease -PtvOnly=true` builds a TV-only bundle
+instead.
 
 ### Play Store files
 

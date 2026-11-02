@@ -24,7 +24,7 @@ The test track runs 1.1.1 (3); 1.1.2 (5) (app-drawer icon on phones/tablets, app
 
 1. **Review: approved** on 1 Nov 2026; the closed-testing release is live and the opt-in link works. Because the app is paid, testers would be charged $0.99, so a promotion "Closed test testers" with 50 one-time promo codes exists (Monetize → Promo codes → Download codes), valid 3 Nov 2026 to 31 Jan 2027. Give each tester one code; they redeem it in the Play Store (profile → Payments & subscriptions → Redeem code) and then install free.
 2. **Find 12 testers** via a tester-swap community (r/AndroidClosedTesting on Reddit, the "Closed Testing" / "20 testers" Discord servers, testerscommunity.com): post the opt-in link (`TESTER_POST.md` has a ready post), test their apps in return, and add each tester's Gmail to the "Alpha testers" list (Closed testing → Alpha → Testers → the list's arrow → Add). Testers must install the app and stay opted in.
-3. **14 days later**: Dashboard → "Apply for access to production". Before the production release, build a new bundle without `-PtvOnly=false` (TV-only again) with a higher versionCode.
+3. **14 days later**: Dashboard → "Apply for access to production". Phones and tablets stay supported in production (decided 1 Nov 2026), so the production bundle is built the same way as the test bundles, just with a higher versionCode.
 4. **15% service fee**: the console notification "It's time to enroll for the 15% service fee" is Google's reduced-fee tier for the first USD 1M a year. Enrol under Manage account → Monetization setup; it halves Google's cut.
 
 ## 6. Before each later upload

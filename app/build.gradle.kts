@@ -28,10 +28,9 @@ android {
         versionCode = 6
         versionName = "1.1.3"
 
-        // `./gradlew bundleRelease -PtvOnly=false` builds a closed-test bundle that also installs
-        // on phones and tablets (Play's 12-tester rule is hard to meet with TV-only testers).
-        // Production bundles keep the default: Android TV required.
-        manifestPlaceholders["leanbackRequired"] = (project.findProperty("tvOnly") ?: "true").toString()
+        // Phones and tablets are supported too (the launcher works as a kiosk-style home screen
+        // there), so Android TV is optional by default. `-PtvOnly=true` builds a TV-only bundle.
+        manifestPlaceholders["leanbackRequired"] = (project.findProperty("tvOnly") ?: "false").toString()
     }
 
     signingConfigs {
