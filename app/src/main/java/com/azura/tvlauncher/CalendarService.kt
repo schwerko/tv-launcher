@@ -3,6 +3,7 @@ package com.azura.tvlauncher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -18,7 +19,14 @@ import java.time.temporal.ChronoUnit
  */
 object CalendarService {
 
-    data class Event(val start: ZonedDateTime, val allDay: Boolean, val title: String)
+    data class Event(
+        val start: ZonedDateTime,
+        val allDay: Boolean,
+        val title: String,
+        val end: ZonedDateTime? = null,
+        val location: String = "",
+        val description: String = "",
+    )
 
     /** Merges every feed; returns null only if none of them could be read. */
     suspend fun upcoming(urls: List<String>, days: Long = 7, max: Int = 4): List<Event>? =
@@ -93,6 +101,11 @@ object CalendarService {
         val allDay = startParams["VALUE"] == "DATE" || startValue.length == 8
         val start = parseDate(startValue, startParams["TZID"]) ?: return
         val title = unescape(props["SUMMARY"]?.second ?: "(no title)")
+        val location = unescape(props["LOCATION"]?.second ?: "")
+        val description = unescape(props["DESCRIPTION"]?.second ?: "")
+        // How long each occurrence lasts: DTEND, else DURATION, else nothing.
+        val length: Duration? = props["DTEND"]?.let { (p, v) -> parseDate(v, p["TZID"])?.let { Duration.between(start, it) } }
+            ?: props["DURATION"]?.second?.let { runCatching { Duration.parse(it) }.getOrNull() }
         val excluded = exdates.mapNotNull { (p, v) -> parseDate(v, p["TZID"])?.toInstant() }.toSet()
         val system = ZoneId.systemDefault()
 
@@ -104,7 +117,8 @@ object CalendarService {
         fun offer(candidate: ZonedDateTime) {
             if (candidate < windowStart || candidate > windowEnd) return
             if (candidate.toInstant() in excluded) return
-            out.add(Event(candidate.withZoneSameInstant(system), allDay, title))
+            val shown = candidate.withZoneSameInstant(system)
+            out.add(Event(shown, allDay, title, length?.let { shown.plus(it) }, location, description))
         }
 
         val rrule = props["RRULE"]?.second

@@ -17,8 +17,8 @@ recommendations, no accounts.
 - Calendar: paste one or more private ICS feed URLs, separated by spaces (Google Calendar:
   Settings → the calendar → "Secret address in iCal format", one per calendar; Outlook:
   Settings → Calendar → Shared calendars → Publish → ICS link). Shows one card per event for the
-  next two days that have anything scheduled (within the coming 7 days), merged across all
-  feeds, including simple recurring ones. Outlook's Windows time-zone names are translated.
+  coming 7 days in a row that scrolls sideways, merged across all feeds, including simple
+  recurring ones; press a card for the time span, location and description. Outlook's Windows time-zone names are translated.
 - Background slideshow, cross-fading every 10 minutes, from one of three sources chosen under
   Settings › Background: Wikimedia Commons' pictures of the day (free licences, no key; the
   last three months' landscape-format photos), Unsplash (paste an access key from

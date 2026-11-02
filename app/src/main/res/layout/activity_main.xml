@@ -120,13 +120,26 @@
         <include layout="@layout/ac_card" />
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/agendaRow"
+    <!-- Up to 7 days of calendar events, scrolls sideways; each card is focusable. -->
+    <HorizontalScrollView
+        android:id="@+id/agendaScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        android:visibility="gone" />
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/agendaRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
 
     <TextView
         android:id="@+id/agendaStatus"

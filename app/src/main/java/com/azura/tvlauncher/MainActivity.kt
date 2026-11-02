@@ -52,6 +52,7 @@ class MainActivity : Activity() {
     private lateinit var dateView: TextView
     private lateinit var weatherTemp: TextView
     private lateinit var weatherDesc: TextView
+    private lateinit var agendaScroll: View
     private lateinit var agendaRow: LinearLayout
     private lateinit var agendaStatus: TextView
     private lateinit var settingsButton: TextView
@@ -114,6 +115,7 @@ class MainActivity : Activity() {
         dateView = findViewById(R.id.date)
         weatherTemp = findViewById(R.id.weatherTemp)
         weatherDesc = findViewById(R.id.weatherDesc)
+        agendaScroll = findViewById(R.id.agendaScroll)
         agendaRow = findViewById(R.id.agendaRow)
         agendaStatus = findViewById(R.id.agendaStatus)
         settingsButton = findViewById(R.id.settingsButton)
@@ -469,13 +471,13 @@ class MainActivity : Activity() {
             lastAgendaAt = now
             val url = prefs.icsUrl
             if (url.isBlank()) {
-                agendaRow.visibility = View.GONE
+                agendaScroll.visibility = View.GONE
                 agendaStatus.visibility = View.GONE
                 return
             }
             val urls = url.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }
             scope.launch {
-                val events = CalendarService.upcoming(urls, max = 30)
+                val events = CalendarService.upcoming(urls, max = MAX_EVENT_CARDS)
                 when {
                     events == null -> showAgendaStatus(getString(R.string.agenda_error))
                     events.isEmpty() -> showAgendaStatus(getString(R.string.agenda_empty))
@@ -486,26 +488,55 @@ class MainActivity : Activity() {
     }
 
     private fun showAgendaStatus(text: String) {
-        agendaRow.visibility = View.GONE
+        agendaScroll.visibility = View.GONE
         agendaStatus.text = text
         agendaStatus.visibility = View.VISIBLE
     }
 
-    /** One card per event, for the next two days that have anything scheduled. */
+    /** One card per event for the next 7 days; the row scrolls sideways and each card opens details. */
     private fun renderAgenda(events: List<CalendarService.Event>) {
-        val days = events.map { it.start.toLocalDate() }.distinct().take(2)
-        val shown = events.filter { it.start.toLocalDate() in days }.take(MAX_EVENT_CARDS)
         val inflater = LayoutInflater.from(this)
+        val hadFocus = currentFocus?.let { agendaRow.indexOfChild(it) } ?: -1
         agendaRow.removeAllViews()
-        for (e in shown) {
+        for (e in events) {
             val card = inflater.inflate(R.layout.item_event, agendaRow, false)
             card.findViewById<TextView>(R.id.eventDay).text = dayLabel(e)
             card.findViewById<TextView>(R.id.eventTime).text = timeLabel(e)
             card.findViewById<TextView>(R.id.eventTitle).text = e.title
+            card.setOnFocusChangeListener { v, focused ->
+                val scale = if (focused) 1.06f else 1f
+                v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+            }
+            card.setOnClickListener { showEventDetails(e) }
             agendaRow.addView(card)
         }
         agendaStatus.visibility = View.GONE
-        agendaRow.visibility = View.VISIBLE
+        agendaScroll.visibility = View.VISIBLE
+        if (hadFocus in 0 until agendaRow.childCount) agendaRow.getChildAt(hadFocus).requestFocus()
+    }
+
+    private fun showEventDetails(e: CalendarService.Event) {
+        val datePattern = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+        val timePattern = DateTimeFormatter.ofPattern(
+            if (android.text.format.DateFormat.is24HourFormat(this)) "HH:mm" else "h:mm a", Locale.getDefault())
+        val whenLine = buildString {
+            append(e.start.format(datePattern))
+            if (e.allDay) {
+                append(" · ").append(getString(R.string.all_day))
+            } else {
+                append(" · ").append(e.start.format(timePattern))
+                e.end?.let { end -> if (end.isAfter(e.start)) append(" – ").append(end.format(timePattern)) }
+            }
+        }
+        val body = buildString {
+            append(whenLine)
+            if (e.location.isNotBlank()) append("\n").append(e.location)
+            if (e.description.isNotBlank()) append("\n\n").append(e.description.take(1500))
+        }
+        dialog().setTitle(e.title)
+            .setMessage(body)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun dayLabel(e: CalendarService.Event): String {
@@ -819,7 +850,7 @@ class MainActivity : Activity() {
         const val AC_REFRESH_MS = 2 * 60_000L
         const val AC_TICK_MS = 30_000L
         const val AC_RESYNC_MS = 8_000L
-        const val MAX_EVENT_CARDS = 6
+        const val MAX_EVENT_CARDS = 40
         const val SLIDE_INTERVAL_MS = 10 * 60_000L
         const val WALLPAPER_LIST_MAX_AGE_MS = 6 * 60 * 60_000L
         const val WALLPAPER_RETRY_MS = 3 * 60_000L
