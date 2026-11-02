@@ -14,7 +14,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 
 **Full description** (4000 max):
 
-> TV Launcher replaces the busy Google TV home with one calm screen: every installed app in a grid, the time and date, the weather, the next things on your calendar, and optional cards for what's on tonight, the news, what's playing and your smart home. No recommendations, no ads, no accounts, no tracking.
+> TV Launcher replaces the busy Google TV home with one calm screen: every installed app in a grid, the time and date, the weather, the next things on your calendar, and optional cards for what's on tonight, the news, what's playing and your smart home. Two looks: colour photos, or a Dark theme with the same photos in black and white. No recommendations, no ads, no accounts, no tracking.
 >
 > WHAT YOU GET
 > • All apps in one grid, sorted A–Z, using each app's TV banner. Pin favourites to the top, hide the ones you never use.
@@ -22,7 +22,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Weather from Open-Meteo for any city you type (starts with the city of your time zone).
 > • Calendar cards: paste the private ICS link of a Google, Outlook or iCloud calendar and see the next 7 days in a row you scroll through; press a card for the details. Several feeds are merged.
 > • Background photos: Wikimedia Commons' picture of the day, your own Unsplash key, or your own image URLs. Plain dark if you prefer.
-> • Two themes: Photo (colour background photos, glass cards) or Dark (the same photos in black and white, grey cards).
+> • Two themes, under Settings > Theme: Photo (colour background photos, glass cards, blue accents) or Dark (the same photos in black and white, grey glass cards, white text).
 > • Screensaver: a full-screen slideshow of those photos with a clock and captions.
 > • Ask: press one button, speak or type a question, and get an answer from Google Gemini (free key) or Claude (paid key, with live web search). Titles the answer mentions open directly in Netflix, HBO Max, Apple TV, Disney+, Prime Video or YouTube.
 > • Cielo mini-split air-conditioner card: power, temperature, mode and fan, with the room's temperature and humidity.
@@ -54,7 +54,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 | App icon | 512×512 PNG | `store/icon_512.png` |
 | Feature graphic | 1024×500 PNG | `store/feature_graphic_1024x500.png` |
 | TV banner | 1280×720 PNG (required for Android TV listings) | `store/tv_banner_1280x720.png` |
-| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` (home, app grid, Tonight, Ask, event details, Settings, screensaver, set up from your phone) |
+| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` (home, Dark theme, Tonight, Ask, event details, Settings, screensaver, set up from your phone) |
 
 ## App content declarations
 

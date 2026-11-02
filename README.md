@@ -172,7 +172,8 @@ instead.
   answers and the adb instructions for users, plus the release checklist.
 - `store/`: 512×512 icon, 1024×500 feature graphic, 1280×720 TV banner and eight 1920×1080
   screenshots taken on a Google TV Streamer (the calendar cards come from a demo feed and the
-  Home Assistant chips from `tools/mock_ha.py`, not from a real home).
+  Home Assistant chips from `tools/mock_ha.py`, not from a real home; the Dark-theme shot's
+  background is "San Juan Valley", a CC0 featured picture on Wikimedia Commons).
 
 ### Moving a sideloaded box to the Play build
 
