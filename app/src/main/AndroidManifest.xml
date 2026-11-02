@@ -19,12 +19,17 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- Streaming apps the Ask panel deep-links into: TV editions and phone/tablet editions. -->
         <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
         <package android:name="com.disney.disneyplus" />
         <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
         <package android:name="com.wbd.stream" />
         <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.apple.atve.android.appletv" />
         <package android:name="com.google.android.youtube.tv" />
+        <package android:name="com.google.android.youtube" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

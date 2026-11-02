@@ -201,28 +201,37 @@ class AskDialog(
      * query in a link; Netflix, HBO Max and Apple TV ignore it, so for those Claude looks up the
      * title's own page and the launcher opens that instead.
      */
+    /**
+     * [packages] lists the TV edition first, then the phone/tablet edition; whichever is
+     * installed is used (the launcher also runs on phones and tablets).
+     */
     private data class Service(
         val label: String,
-        val packageName: String,
+        val packages: List<String>,
         val search: (String) -> String,
         val urlForm: String? = null,
         val hostPattern: Regex? = null,
+        val packageName: String = packages.first(),
     )
 
     private val services = listOf(
-        Service("Netflix", "com.netflix.ninja", { "https://www.netflix.com/search?q=$it" },
+        Service("Netflix", listOf("com.netflix.ninja", "com.netflix.mediaclient"), { "https://www.netflix.com/search?q=$it" },
             "www.netflix.com/title/<id>", Regex("""www\.netflix\.com/title/\d+""")),
-        Service("Disney+", "com.disney.disneyplus", { "https://www.disneyplus.com/search?q=$it" }),
-        Service("Prime Video", "com.amazon.amazonvideo.livingroom", { "https://app.primevideo.com/search?phrase=$it" }),
-        Service("HBO Max", "com.wbd.stream", { "https://play.max.com/search?q=$it" },
+        Service("Disney+", listOf("com.disney.disneyplus"), { "https://www.disneyplus.com/search?q=$it" }),
+        Service("Prime Video", listOf("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"), { "https://app.primevideo.com/search?phrase=$it" }),
+        Service("HBO Max", listOf("com.wbd.stream"), { "https://play.max.com/search?q=$it" },
             "play.max.com/show/<id> or play.max.com/movie/<id>", Regex("""play\.(?:hbo)?max\.com/(?:show|movie)/[A-Za-z0-9-]+""")),
-        Service("Apple TV", "com.apple.atve.androidtv.appletv", { "https://tv.apple.com/search?term=$it" },
+        Service("Apple TV", listOf("com.apple.atve.androidtv.appletv", "com.apple.atve.android.appletv"), { "https://tv.apple.com/search?term=$it" },
             "tv.apple.com/us/show/<slug>/<id> or tv.apple.com/us/movie/<slug>/<id>", Regex("""tv\.apple\.com/\S+?umc\.cmc\.[a-z0-9]+""")),
-        Service("YouTube", "com.google.android.youtube.tv", { "https://www.youtube.com/results?search_query=$it" }),
+        Service("YouTube", listOf("com.google.android.youtube.tv", "com.google.android.youtube"), { "https://www.youtube.com/results?search_query=$it" }),
     )
 
-    private fun installed(): List<Service> = services.filter { svc ->
-        runCatching { activity.packageManager.getPackageInfo(svc.packageName, 0) }.isSuccess
+    /** Each service that is installed, resolved to the edition (TV or mobile) actually present. */
+    private fun installed(): List<Service> = services.mapNotNull { svc ->
+        val present = svc.packages.firstOrNull { pkg ->
+            runCatching { activity.packageManager.getPackageInfo(pkg, 0) }.isSuccess
+        } ?: return@mapNotNull null
+        svc.copy(packageName = present)
     }
 
     private fun openTitle(title: String) {

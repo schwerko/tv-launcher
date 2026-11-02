@@ -52,7 +52,8 @@ recommendations, no accounts.
     very recent news may be missing. Uses `gemini-3.5-flash`, falling back to `gemini-3.8-flash`.
   - Claude (paid, live web search): an Anthropic key (console.anthropic.com), `claude-haiku-5-5`
     at low effort with up to two web searches; roughly 1–2 cents a question.
-  Any titles the answer names become buttons. Disney+, Prime Video and YouTube open a search
+  Any titles the answer names become buttons (the TV edition of each streaming app is used
+  on a TV, the phone edition on a phone or tablet). Disney+, Prime Video and YouTube open a search
   for the title directly. Netflix, HBO Max and Apple TV ignore search links, so for those the
   launcher asks the model for the title's own page and opens that (Claude looks it up on the
   web; Gemini answers from memory and may miss); if nothing is found it opens the app's search.
