@@ -25,8 +25,13 @@ android {
         applicationId = "com.azura.tvlauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.1.1"
+
+        // `./gradlew bundleRelease -PtvOnly=false` builds a closed-test bundle that also installs
+        // on phones and tablets (Play's 12-tester rule is hard to meet with TV-only testers).
+        // Production bundles keep the default: Android TV required.
+        manifestPlaceholders["leanbackRequired"] = (project.findProperty("tvOnly") ?: "true").toString()
     }
 
     signingConfigs {

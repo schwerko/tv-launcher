@@ -20,9 +20,11 @@ Done: store listing with all assets, Android TV form factor (opted in), every Ap
 
 ## 5. Left for you
 
-1. **Testers**: Closed testing → Alpha → Testers → Create email list: name it, paste 12 or more Gmail addresses (comma-separated), Save. Then tick the list and Save the Testers tab. Copy the opt-in link it shows and send it to the testers.
-2. **Send for review**: Publishing overview → "Send app for review". Play review usually takes a few days for a first submission.
-3. **Testers must opt in and stay opted in for 14 days** before you can apply for production access (Dashboard → "Apply for access to production").
+The draft release is now 1.1.1 (3), built with `-PtvOnly=false` so phone-only testers can install it. The tester list "Alpha testers" exists (your own address in it) and the opt-in link is https://play.google.com/apps/testing/com.azura.tvlauncher
+
+1. **Send for review**: Publishing overview → "Send app for review". Play review usually takes a few days for a first submission; the opt-in link only works once the review is approved.
+2. **Find 12 testers** via a tester-swap community (r/AndroidClosedTesting on Reddit, the "Closed Testing" / "20 testers" Discord servers, testerscommunity.com): post the opt-in link (`TESTER_POST.md` has a ready post), test their apps in return, and add each tester's Gmail to the "Alpha testers" list (Closed testing → Alpha → Testers → the list's arrow → Add). Testers must install the app and stay opted in.
+3. **14 days later**: Dashboard → "Apply for access to production". Before the production release, build a new bundle without `-PtvOnly=false` (TV-only again) with a higher versionCode.
 4. **15% service fee**: the console notification "It's time to enroll for the 15% service fee" is Google's reduced-fee tier for the first USD 1M a year. Enrol under Manage account → Monetization setup; it halves Google's cut.
 
 ## 6. Before each later upload

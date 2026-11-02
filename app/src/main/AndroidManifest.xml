@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- TV only: keeps the Play listing off phones and tablets, where a D-pad launcher makes no sense. -->
-    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <!-- TV only by default: keeps the Play listing off phones and tablets, where a D-pad launcher
+         makes no sense. Closed-test builds are made with `-PtvOnly=false` so testers who only
+         have a phone can install them (see README "Release build"). -->
+    <uses-feature android:name="android.software.leanback" android:required="${leanbackRequired}" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <!-- Voice questions need a microphone (the remote's), but typing works without one. -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
