@@ -351,6 +351,9 @@ class MainActivity : Activity() {
                     }
                 }
             },
+            getString(R.string.setting_choose_apps, allApps.size - prefs.hidden.count { h -> allApps.any { it.packageName == h } }, allApps.size) to {
+                showAppChooser()
+            },
             getString(R.string.setting_unhide, prefs.hidden.size) to {
                 prefs.hidden = emptySet()
                 applyFilter()
@@ -364,6 +367,24 @@ class MainActivity : Activity() {
         )
         dialog().setTitle(R.string.settings)
             .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
+            .show()
+    }
+
+    /** Checklist of every installed app; unticked ones are hidden from the grid. */
+    private fun showAppChooser() {
+        val apps = allApps
+        if (apps.isEmpty()) return
+        val hidden = prefs.hidden.toMutableSet()
+        val checked = BooleanArray(apps.size) { apps[it].packageName !in hidden }
+        dialog().setTitle(R.string.choose_apps_title)
+            .setMultiChoiceItems(apps.map { it.label }.toTypedArray(), checked) { _, which, isChecked ->
+                if (isChecked) hidden.remove(apps[which].packageName) else hidden.add(apps[which].packageName)
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                prefs.hidden = hidden
+                applyFilter()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

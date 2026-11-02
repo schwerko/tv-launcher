@@ -25,8 +25,8 @@ android {
         applicationId = "com.azura.tvlauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.1.2"
+        versionCode = 6
+        versionName = "1.1.3"
 
         // `./gradlew bundleRelease -PtvOnly=false` builds a closed-test bundle that also installs
         // on phones and tablets (Play's 12-tester rule is hard to meet with TV-only testers).

@@ -8,7 +8,8 @@ recommendations, no accounts.
 
 - All apps in a grid, sorted A–Z, using each app's TV banner (falls back to its icon).
 - D-pad navigation with a highlight ring and scale-up on focus.
-- Long-press (or the Menu button) on an app: pin to top, hide, app info, uninstall.
+- Long-press (or the Menu button) on an app: pin to top, hide, app info, uninstall. Settings ›
+  "Choose apps to show" is a checklist of every installed app for hiding many at once.
 - Clock and date, respecting the box's 12/24-hour setting.
 - Weather from Open-Meteo (free, no key) for a city you type in Settings; until you do, it uses
   the city of the box's time zone (e.g. "America/Phoenix" → Phoenix). Nothing about the box's
