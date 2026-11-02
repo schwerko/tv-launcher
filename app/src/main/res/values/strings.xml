@@ -138,4 +138,13 @@
     <string name="ha_error">Couldn\'t reach Home Assistant at %1$s</string>
     <string name="ha_action_failed">Home Assistant didn\'t accept that: %1$s</string>
     <string name="ha_help">A Home Assistant row shows lights, switches, scenes and sensors from your own server on the home screen. Enter the server address and a long-lived access token, then choose what to show.</string>
+    <string name="setting_phone_setup">Set up from your phone…</string>
+    <string name="phone_setup_title">Set up from your phone</string>
+    <string name="phone_setup_text">Scan the code with your phone, or type the address into its browser. A page opens where you can paste calendar links, API keys and the rest. Enter the 4-digit code on that page to save.</string>
+    <string name="phone_setup_address">%1$s</string>
+    <string name="phone_setup_code">Code: %1$s</string>
+    <string name="phone_setup_waiting">Waiting… the page works only while this screen is open and only on your home network.</string>
+    <string name="phone_setup_saved">Saved from your phone at %1$s. You can close this screen.</string>
+    <string name="phone_setup_no_network">The TV has no network address. Connect it to Wi-Fi or Ethernet and try again.</string>
+    <string name="phone_setup_close">Close</string>
 </resources>

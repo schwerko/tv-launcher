@@ -32,7 +32,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Home Assistant: your lights, switches, scenes and sensors as chips on the home screen, from your own server.
 >
 > BRING YOUR OWN KEYS
-> Weather, photos and the launcher itself need no account. The assistant, Unsplash and Cielo features use API keys you create with those services and type into Settings. Keys stay on the TV. The developer runs no server and collects nothing. See the privacy policy for exactly which service receives what.
+> Weather, photos and the launcher itself need no account. The assistant, Unsplash and Cielo features use API keys you create with those services. Paste them from your phone: Settings shows a QR code that opens a one-page form on your home network, so nothing long is typed with the remote. Keys stay on the TV. The developer runs no server and collects nothing. See the privacy policy for exactly which service receives what.
 >
 > MAKING IT YOUR HOME SCREEN
 > Google TV has no "choose launcher" setting, so making TV Launcher the home screen takes a one-time step from a computer with adb (Android's debugging tool). The instructions are in the app's Settings under "Choose default launcher" and on the support page. Until you do that, TV Launcher works as a normal app you open from the Google TV home.
@@ -86,7 +86,7 @@ Data types to declare (all **optional**, all **shared**, purpose **App functiona
 | Personal info › Other info | The Home Assistant access token the user created, sent only to the user's own Home Assistant server at the address they typed. | The user's own server |
 | App activity › Other actions | Home Assistant toggle / scene commands the user presses. | The user's own server |
 
-Not declared because it never leaves the device: the installed-app list, calendar events and news headlines (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. The "What's on tonight" card sends only the date, the weather city and the ticked interests (e.g. "Sports") to the assistant (covered by the location and user-generated-content rows above). A pressed headline is handed to the YouTube app on the device as a search, not sent by this app. Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
+The "Set up from your phone" page is served by the app on the local network only (no internet host), so it adds nothing to the form. Not declared because it never leaves the device: the installed-app list, calendar events and news headlines (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. The "What's on tonight" card sends only the date, the weather city and the ticked interests (e.g. "Sports") to the assistant (covered by the location and user-generated-content rows above). A pressed headline is handed to the YouTube app on the device as a search, not sent by this app. Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
 
 ### Government apps, financial features, health
 No to all.

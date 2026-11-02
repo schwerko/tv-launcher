@@ -51,6 +51,10 @@ Android app backup is turned off for this app, so these values are not copied to
 
 Android only lets an app list the device's active media sessions (what Spotify, YouTube and similar apps are playing) if that app holds the "notification access" permission. TV Launcher asks for it solely for the Now playing card: track title, artist, album art and the play, pause and skip buttons. The app never reads, stores or forwards the contents of notifications, and the permission is optional; without it the card simply stays hidden.
 
+## Set up from your phone (local page)
+
+Settings › "Set up from your phone…" starts a small web page served by the app itself, at the TV's own address on your home network (for example `http://192.168.1.50:8765/`), so links and keys can be pasted from a phone instead of typed with the remote. It runs only while that screen is open on the TV, accepts connections only from your local network, needs the 4-digit code shown on the TV to save anything, and never displays keys already stored. Values travel directly from the phone to the TV over your own network; no internet service is involved. The developer cannot reach the page.
+
 ## Installed apps
 
 As a home screen, the app asks Android for the apps that can be opened from a launcher so it can show them in its grid. That list is used only to draw the grid and is never transmitted.

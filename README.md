@@ -94,6 +94,14 @@ recommendations, no accounts.
   for the title directly. Netflix, HBO Max and Apple TV ignore search links, so for those the
   launcher asks the model for the title's own page and opens that (Claude looks it up on the
   web; Gemini answers from memory and may miss); if nothing is found it opens the app's search.
+- Set up from your phone: Settings › "Set up from your phone…" shows a QR code, an address such
+  as `http://192.168.1.50:8765/` and a 4-digit code. Scan or type the address on a phone (or any
+  computer) on the same network and a single page lets you paste the long values: calendar
+  links, news sources, background image links, the Gemini, Anthropic, Cielo and Unsplash keys,
+  and the Home Assistant address and token. Fields left blank keep their current value; keys
+  are never shown on the page. The page is served by the launcher itself, only on the TV's own
+  LAN address, only while that screen is open, and saving needs the code (five wrong codes
+  close it). Nothing goes through the internet.
 - Refreshes automatically when apps are installed or removed.
 - The header (clock, air conditioner, weather, Ask, Settings) stays fixed; the rows under it
   (Tonight, Home Assistant, calendar, news, the app grid) scroll beneath it as D-pad focus
@@ -233,8 +241,8 @@ Focus the **Settings** button at the top right and press OK:
 
 - Weather location: a city name, or blank for the city of the box's time zone.
 - Temperature unit: toggles °C / °F.
-- Calendar feed: paste your ICS URL (typing on a TV is slow; pasting works if your remote app
-  supports it, or send text with `adb shell input text '...'` while the field is focused).
+- Calendar feed: paste your ICS URL (typing on a TV is slow: use "Set up from your phone…"
+  below, the remote app's keyboard, or `adb shell input text '...'` while the field is focused).
 - News (opens in YouTube): tick well-known sources or paste RSS/Atom URLs or YouTube channel links.
 - Tonight interests: what you like to watch, for the daily picks.
 - Home Assistant: server address, access token, and which entities to show.
@@ -243,6 +251,7 @@ Focus the **Settings** button at the top right and press OK:
   key), or your own image URLs.
 - Ask uses / Gemini key / Claude key: pick the model and paste its key.
 - Cielo AC: paste the API key (changing it forgets the old token and unit).
+- Set up from your phone…: the QR-code page for pasting links and keys from a phone.
 - Show hidden apps: unhides everything you've hidden.
 - Android settings / Choose default launcher: shortcuts into system settings.
 

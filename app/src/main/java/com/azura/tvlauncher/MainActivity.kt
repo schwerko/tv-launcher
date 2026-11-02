@@ -248,6 +248,10 @@ class MainActivity : Activity() {
         handler.removeCallbacks(acResync)
         handler.removeCallbacks(haTick)
         handler.removeCallbacks(haResync)
+        // The setup page lives only while its screen is open; leaving the launcher closes both.
+        setupDialog?.dismiss()
+        setupServer?.stop()
+        setupServer = null
         stopMediaWatch()
     }
 
@@ -436,6 +440,7 @@ class MainActivity : Activity() {
                 prefs.hidden = emptySet()
                 applyFilter()
             },
+            getString(R.string.setting_phone_setup) to { showPhoneSetup() },
             getString(R.string.setting_android) to { runCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) }; Unit },
             getString(R.string.setting_default_home) to {
                 runCatching { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
@@ -518,6 +523,91 @@ class MainActivity : Activity() {
     }
 
     private fun dialog() = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+
+    // ---- Set up from your phone -----------------------------------------------------------
+
+    private var setupServer: SetupServer? = null
+    private var setupDialog: AlertDialog? = null
+
+    /** Shows the QR code / address / code and runs the local setup page until the dialog closes. */
+    private fun showPhoneSetup() {
+        setupServer?.stop()
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_phone_setup, null)
+        val status = view.findViewById<TextView>(R.id.setupStatus)
+        val server = SetupServer(
+            port = SETUP_PORT,
+            current = {
+                mapOf(
+                    "city" to prefs.city,
+                    "ics" to prefs.icsUrl.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }.joinToString("\n"),
+                    "news" to newsUrls().joinToString("\n"),
+                    "wallpaper_urls" to prefs.wallpaper.takeUnless { it == WallpaperService.COMMONS || it == WallpaperService.UNSPLASH }
+                        .orEmpty().split(Regex("\\s+")).filter { it.isNotBlank() }.joinToString("\n"),
+                    "ha_url" to prefs.haUrl,
+                )
+            },
+            secretsSet = {
+                buildSet {
+                    if (prefs.geminiApiKey.isNotBlank()) add("gemini_key")
+                    if (prefs.claudeApiKey.isNotBlank()) add("claude_key")
+                    if (prefs.cieloApiKey.isNotBlank()) add("cielo_key")
+                    if (prefs.unsplashKey.isNotBlank()) add("unsplash_key")
+                    if (prefs.haToken.isNotBlank()) add("ha_token")
+                }
+            },
+            onSave = { values -> runOnUiThread { applyPhoneSetup(values); status.text = getString(R.string.phone_setup_saved, clockText(LocalTime.now())) } },
+        )
+        if (!server.start()) {
+            dialog().setTitle(R.string.phone_setup_title).setMessage(R.string.phone_setup_no_network)
+                .setPositiveButton(android.R.string.ok, null).show()
+            return
+        }
+        setupServer = server
+        view.findViewById<TextView>(R.id.setupText).setText(R.string.phone_setup_text)
+        view.findViewById<TextView>(R.id.setupAddress).text = getString(R.string.phone_setup_address, server.address)
+        view.findViewById<TextView>(R.id.setupCode).text = getString(R.string.phone_setup_code, server.code)
+        status.setText(R.string.phone_setup_waiting)
+        view.findViewById<ImageView>(R.id.setupQr).setImageBitmap(qrBitmap(server.address, 512))
+        setupDialog = dialog().setTitle(R.string.phone_setup_title).setView(view)
+            .setPositiveButton(R.string.phone_setup_close, null)
+            .setOnDismissListener { server.stop(); if (setupServer === server) setupServer = null; setupDialog = null }
+            .show()
+    }
+
+    /** Applies fields posted from the phone page; blank fields were already dropped for secrets. */
+    private fun applyPhoneSetup(v: Map<String, String>) {
+        var widgets = false; var news = false; var ha = false; var wallpaper = false; var ask = false
+        v["city"]?.let { if (it != prefs.city) { prefs.city = it; widgets = true } }
+        v["ics"]?.let { val joined = it.split(Regex("[\\s,;]+")).filter { u -> u.isNotBlank() }.joinToString(" "); if (joined != prefs.icsUrl) { prefs.icsUrl = joined; widgets = true } }
+        v["news"]?.let { val joined = NewsService.normalise(it).joinToString(" "); if (joined != prefs.newsUrls) { prefs.newsUrls = joined; news = true } }
+        v["wallpaper_urls"]?.let { val joined = it.split(Regex("\\s+")).filter { u -> u.isNotBlank() }.joinToString(" "); if (joined.isNotBlank()) { prefs.wallpaper = joined; wallpaper = true } }
+        v["unsplash_key"]?.let { prefs.unsplashKey = it; prefs.wallpaper = WallpaperService.UNSPLASH; wallpaper = true }
+        v["gemini_key"]?.let { prefs.geminiApiKey = it; ask = true }
+        v["claude_key"]?.let { prefs.claudeApiKey = it; ask = true }
+        v["cielo_key"]?.let {
+            if (it != prefs.cieloApiKey) {
+                prefs.cieloApiKey = it; prefs.cieloToken = ""; prefs.cieloDevice = ""
+                cielo = null; acDevice = null; acDevices = emptyList(); acCard.visibility = View.GONE
+                refreshAc(force = true)
+            }
+        }
+        v["ha_url"]?.let { if (it != prefs.haUrl) { prefs.haUrl = it; ha = true } }
+        v["ha_token"]?.let { prefs.haToken = it; ha = true }
+        if (ha) { this.ha = null; haFailed = false; refreshHa(force = true) }
+        if (ask) resetAssistant()
+        if (widgets) refreshWidgets(force = true)
+        if (news) refreshNews(force = true)
+        if (wallpaper) refreshWallpaper(force = true)
+        Toast.makeText(this, R.string.phone_setup_title, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun qrBitmap(text: String, size: Int): Bitmap {
+        val hints = mapOf(com.google.zxing.EncodeHintType.MARGIN to 1)
+        val matrix = com.google.zxing.qrcode.QRCodeWriter().encode(text, com.google.zxing.BarcodeFormat.QR_CODE, size, size, hints)
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+        for (y in 0 until size) for (x in 0 until size) bmp.setPixel(x, y, if (matrix.get(x, y)) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+        return bmp
+    }
 
     // ---- widgets --------------------------------------------------------------------------
 
@@ -1440,5 +1530,6 @@ class MainActivity : Activity() {
         const val WALLPAPER_LIST_MAX_AGE_MS = 6 * 60 * 60_000L
         const val WALLPAPER_RETRY_MS = 3 * 60_000L
         const val CROSSFADE_MS = 1500
+        const val SETUP_PORT = 8765
     }
 }
