@@ -10,7 +10,7 @@
     android:paddingEnd="10dp"
     android:paddingTop="6dp"
     android:paddingBottom="6dp"
-    android:background="@drawable/ac_button"
+    android:background="@drawable/ha_chip"
     android:focusable="true"
     android:focusableInTouchMode="true"
     android:clickable="true">

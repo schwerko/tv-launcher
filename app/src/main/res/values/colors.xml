@@ -7,4 +7,7 @@
     <color name="text_secondary">#FF9A9A94</color>
     <color name="accent">#FF85B7EB</color>
     <color name="icon_bg">#FF1E2128</color>
+    <!-- Info cards over the background photo: see-through at rest, nearly solid when focused. -->
+    <color name="card_glass">#B8262930</color>
+    <color name="card_glass_focused">#F2262930</color>
 </resources>

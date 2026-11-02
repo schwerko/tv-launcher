@@ -667,6 +667,14 @@ class MainActivity : Activity() {
         return t.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
     }
 
+    /** Calendar and news cards: see-through at rest, nearly solid and slightly larger when focused. */
+    private val glassCardFocus = View.OnFocusChangeListener { v, focused ->
+        val scale = if (focused) 1.06f else 1f
+        v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+        (v as? androidx.cardview.widget.CardView)?.setCardBackgroundColor(
+            getColor(if (focused) R.color.card_glass_focused else R.color.card_glass))
+    }
+
     private fun showAgendaStatus(text: String) {
         agendaScroll.visibility = View.GONE
         agendaStatus.text = text
@@ -683,10 +691,7 @@ class MainActivity : Activity() {
             card.findViewById<TextView>(R.id.eventDay).text = dayLabel(e)
             card.findViewById<TextView>(R.id.eventTime).text = timeLabel(e)
             card.findViewById<TextView>(R.id.eventTitle).text = e.title
-            card.setOnFocusChangeListener { v, focused ->
-                val scale = if (focused) 1.06f else 1f
-                v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
-            }
+            card.setOnFocusChangeListener(glassCardFocus)
             card.setOnClickListener { showEventDetails(e) }
             agendaRow.addView(card)
         }
@@ -1042,10 +1047,7 @@ class MainActivity : Activity() {
                     if (bmp != null && card.parent === newsRow) thumb.setImageBitmap(bmp)
                 }
             }
-            card.setOnFocusChangeListener { v, focused ->
-                val scale = if (focused) 1.06f else 1f
-                v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
-            }
+            card.setOnFocusChangeListener(glassCardFocus)
             card.setOnClickListener { openNews(item) }
             newsRow.addView(card)
         }

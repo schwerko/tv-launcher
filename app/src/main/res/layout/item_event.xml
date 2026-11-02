@@ -10,7 +10,7 @@
     android:foreground="@drawable/tile_focus"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
-    app:cardBackgroundColor="@color/tile">
+    app:cardBackgroundColor="@color/card_glass">
 
     <LinearLayout
         android:layout_width="match_parent"
