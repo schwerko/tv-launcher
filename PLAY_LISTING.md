@@ -10,7 +10,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 
 **Short description** (80 max):
 
-> A calm home screen for Google TV: your apps, clock, weather, calendar, news and more.
+> Calm Google TV home screen: your apps, clock, weather, calendar, news and more.
 
 **Full description** (4000 max):
 
