@@ -66,6 +66,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+
+            <!-- Ordinary app-drawer icon, for phones and tablets (closed-test builds) and for
+                 TV boxes that list apps through the plain LAUNCHER category. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <!-- Screensaver (Android "Dream"): nature photos from around the world. -->
