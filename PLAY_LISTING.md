@@ -10,17 +10,17 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 
 **Short description** (80 max):
 
-> A clean home screen for Google TV: all your apps, the clock, weather and calendar.
+> A calm home screen for Google TV: your apps, clock, weather, calendar, news and more.
 
 **Full description** (4000 max):
 
-> TV Launcher replaces the busy Google TV home with one calm screen: every installed app in a grid, the time and date, the weather, and the next things on your calendar. No recommendations, no ads, no accounts, no tracking.
+> TV Launcher replaces the busy Google TV home with one calm screen: every installed app in a grid, the time and date, the weather, the next things on your calendar, and optional cards for what's on tonight, the news, what's playing and your smart home. No recommendations, no ads, no accounts, no tracking.
 >
 > WHAT YOU GET
 > • All apps in one grid, sorted A–Z, using each app's TV banner. Pin favourites to the top, hide the ones you never use.
 > • Clock and date, in the TV's own 12/24-hour format.
 > • Weather from Open-Meteo for any city you type (starts with the city of your time zone).
-> • Calendar cards: paste the private ICS link of a Google, Outlook or iCloud calendar and see what's coming up over the next two days. Several feeds are merged.
+> • Calendar cards: paste the private ICS link of a Google, Outlook or iCloud calendar and see the next 7 days in a row you scroll through; press a card for the details. Several feeds are merged.
 > • Background photos: Wikimedia Commons' picture of the day, your own Unsplash key, or your own image URLs. Plain dark if you prefer.
 > • Screensaver: a full-screen slideshow of those photos with a clock and captions.
 > • Ask: press one button, speak or type a question, and get an answer from Google Gemini (free key) or Claude (paid key, with live web search). Titles the answer mentions open directly in Netflix, HBO Max, Apple TV, Disney+, Prime Video or YouTube.
@@ -37,7 +37,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > MAKING IT YOUR HOME SCREEN
 > Google TV has no "choose launcher" setting, so making TV Launcher the home screen takes a one-time step from a computer with adb (Android's debugging tool). The instructions are in the app's Settings under "Choose default launcher" and on the support page. Until you do that, TV Launcher works as a normal app you open from the Google TV home.
 >
-> Works on Android TV and Google TV devices running Android 8.0 or later. Designed for the remote's D-pad.
+> Made for Android TV and Google TV (Android 8.0 or later) and the remote's D-pad. It also installs on phones and tablets, where it works as a simple kiosk-style front screen.
 
 **Category**: Tools. **Tags**: launcher, home screen, TV.
 
@@ -50,7 +50,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 | App icon | 512×512 PNG | `store/icon_512.png` |
 | Feature graphic | 1024×500 PNG | `store/feature_graphic_1024x500.png` |
 | TV banner | 1280×720 PNG (required for Android TV listings) | `store/tv_banner_1280x720.png` |
-| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` |
+| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` (home, app grid, Tonight, Ask, event details, Settings, screensaver) |
 
 ## App content declarations
 

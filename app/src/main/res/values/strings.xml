@@ -87,7 +87,7 @@
     <string name="city_hint">City name, e.g. Denver or Paris</string>
     <string name="city_default">%1$s (from the box\'s time zone)</string>
     <string name="hint_title">Welcome</string>
-    <string name="hint_body">Your apps are below. Everything else is optional and set up under Settings (top right): the weather city (showing %1$s for now), a calendar feed, a photo background, the Ask assistant (needs a Gemini or Anthropic key) and Cielo air-conditioner control.</string>
+    <string name="hint_body">Your apps are below. Everything else is optional and set up under Settings (top right): the weather city (showing %1$s for now), a calendar feed, news sources, a photo background, the Ask assistant with its daily "Tonight" picks (needs a Gemini or Anthropic key), Home Assistant, Cielo air-conditioner control and the Now playing card.</string>
     <string name="hint_open_settings">Open Settings</string>
     <string name="hint_later">Later</string>
     <string name="ics_prompt">Calendar ICS feed URLs (separate several with spaces)</string>

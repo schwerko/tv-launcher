@@ -6,7 +6,7 @@
 
 Hi all, I need 12 testers for Google Play's closed-testing requirement and will test your app in return (post or DM your link).
 
-App: TV Launcher, a clean home screen for Google TV / Android TV: all apps in a grid, clock, weather, calendar cards, photo screensaver, an optional AI "Ask" panel. It is made for TV, but the test build installs on any Android phone too; on a phone it just shows the app grid, which is enough for the test.
+App: TV Launcher, a clean home screen for Google TV / Android TV: all apps in a grid, clock, weather, calendar cards, news that plays in YouTube, a daily "what's on tonight" card, a Now playing card, optional Home Assistant chips, a photo screensaver and an AI "Ask" panel. It is made for TV, but the test build installs on any Android phone or tablet too, which is enough for the test.
 
 It is a paid app ($0.99) but you will NOT pay: reply or DM me and I send you a promo code that makes it free.
 
