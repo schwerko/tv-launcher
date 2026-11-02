@@ -5,7 +5,13 @@ import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.ComponentName
 import android.content.IntentFilter
+import android.media.MediaMetadata
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
+import android.widget.ImageView
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -136,6 +142,7 @@ class MainActivity : Activity() {
             }
         }
         setupAcCard()
+        setupMediaCard()
         settingsButton.setOnFocusChangeListener { v, focused ->
             val scale = if (focused) 1.08f else 1f
             v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
@@ -183,6 +190,7 @@ class MainActivity : Activity() {
         refreshWallpaper(force = false)
         handler.removeCallbacks(acTick)
         handler.post(acTick)
+        startMediaWatch()
     }
 
     override fun onPause() {
@@ -192,6 +200,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(wallpaperRetry)
         handler.removeCallbacks(acTick)
         handler.removeCallbacks(acResync)
+        stopMediaWatch()
     }
 
     override fun onDestroy() {
@@ -352,6 +361,9 @@ class MainActivity : Activity() {
                         refreshAc(force = true)
                     }
                 }
+            },
+            getString(R.string.setting_media, getString(if (mediaListenerEnabled()) R.string.media_on else R.string.media_needs_access)) to {
+                showMediaAccessHelp()
             },
             getString(R.string.setting_choose_apps, allApps.size - prefs.hidden.count { h -> allApps.any { it.packageName == h } }, allApps.size) to {
                 showAppChooser()
@@ -692,6 +704,115 @@ class MainActivity : Activity() {
             if (resultCode == RESULT_OK && !spoken.isNullOrBlank()) askDialog?.askSpoken(spoken)
             else askDialog?.showStatus(getString(R.string.ask_no_speech))
         }
+    }
+
+    // ---- Now playing (media sessions) -----------------------------------------------------
+
+    private val mediaCard: View get() = findViewById(R.id.mediaCard)
+    private var mediaManager: MediaSessionManager? = null
+    private var mediaController: MediaController? = null
+    private val mediaComponent by lazy { ComponentName(this, MediaListener::class.java) }
+
+    private val mediaCallback = object : MediaController.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackState?) = renderMedia()
+        override fun onMetadataChanged(metadata: MediaMetadata?) = renderMedia()
+        override fun onSessionDestroyed() = pickMediaSession(mediaManager?.let { safeSessions(it) })
+    }
+    private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { pickMediaSession(it) }
+
+    /** True once the user (or adb) has granted notification access to MediaListener. */
+    private fun mediaListenerEnabled(): Boolean {
+        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
+        return flat.split(':').any { ComponentName.unflattenFromString(it)?.packageName == packageName }
+    }
+
+    private fun safeSessions(mgr: MediaSessionManager): List<MediaController>? =
+        runCatching { mgr.getActiveSessions(mediaComponent) }.getOrNull()
+
+    private fun setupMediaCard() {
+        val scaleOnFocus = View.OnFocusChangeListener { v, focused ->
+            val scale = if (focused) 1.1f else 1f
+            v.animate().scaleX(scale).scaleY(scale).setDuration(100).start()
+        }
+        listOf(R.id.mediaTitle, R.id.mediaPrev, R.id.mediaPlayPause, R.id.mediaNext).forEach {
+            findViewById<View>(it).onFocusChangeListener = scaleOnFocus
+        }
+        findViewById<View>(R.id.mediaPrev).setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
+        findViewById<View>(R.id.mediaNext).setOnClickListener { mediaController?.transportControls?.skipToNext() }
+        findViewById<View>(R.id.mediaPlayPause).setOnClickListener {
+            val c = mediaController ?: return@setOnClickListener
+            if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause() else c.transportControls.play()
+        }
+        findViewById<View>(R.id.mediaTitle).setOnClickListener {
+            val pkg = mediaController?.packageName ?: return@setOnClickListener
+            val intent = packageManager.getLeanbackLaunchIntentForPackage(pkg) ?: packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) runCatching { startActivity(intent) }
+        }
+    }
+
+    private fun startMediaWatch() {
+        if (!mediaListenerEnabled()) {
+            mediaCard.visibility = View.GONE
+            return
+        }
+        val mgr = mediaManager ?: (getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager).also { mediaManager = it }
+        runCatching { mgr.addOnActiveSessionsChangedListener(sessionsListener, mediaComponent) }
+            .onFailure { android.util.Log.w("Media", "no session access", it) }
+        pickMediaSession(safeSessions(mgr))
+    }
+
+    private fun stopMediaWatch() {
+        runCatching { mediaManager?.removeOnActiveSessionsChangedListener(sessionsListener) }
+        mediaController?.unregisterCallback(mediaCallback)
+        mediaController = null
+    }
+
+    /** Prefers a session that is playing, then one that is paused; otherwise hides the card. */
+    private fun pickMediaSession(list: List<MediaController>?) {
+        val sessions = list ?: emptyList()
+        val best = sessions.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            ?: sessions.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PAUSED }
+        if (best?.sessionToken != mediaController?.sessionToken) {
+            mediaController?.unregisterCallback(mediaCallback)
+            mediaController = best
+            best?.registerCallback(mediaCallback)
+        }
+        renderMedia()
+    }
+
+    private fun renderMedia() {
+        val c = mediaController
+        val state = c?.playbackState?.state
+        if (c == null || state == null || state == PlaybackState.STATE_NONE || state == PlaybackState.STATE_STOPPED) {
+            mediaCard.visibility = View.GONE
+            return
+        }
+        val md = c.metadata
+        val title = md?.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
+        val artist = md?.getString(MediaMetadata.METADATA_KEY_ARTIST).orEmpty()
+            .ifBlank { md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST).orEmpty() }
+        val appName = runCatching {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(c.packageName, 0)).toString()
+        }.getOrDefault(c.packageName)
+        findViewById<TextView>(R.id.mediaTitle).text = title.ifBlank { appName }
+        findViewById<TextView>(R.id.mediaArtist).text = if (artist.isBlank()) appName else "$artist · $appName"
+        val art = md?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: md?.getBitmap(MediaMetadata.METADATA_KEY_ART)
+        findViewById<ImageView>(R.id.mediaArt).apply {
+            if (art != null) setImageBitmap(art) else setImageDrawable(null)
+        }
+        findViewById<ImageView>(R.id.mediaPlayPause).setImageResource(
+            if (state == PlaybackState.STATE_PLAYING) R.drawable.ic_pause else R.drawable.ic_play)
+        mediaCard.visibility = View.VISIBLE
+    }
+
+    private fun showMediaAccessHelp() {
+        val b = dialog().setTitle(R.string.media_access_title).setMessage(R.string.media_access_body)
+            .setNegativeButton(android.R.string.cancel, null)
+        val settingsIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        if (settingsIntent.resolveActivity(packageManager) != null) {
+            b.setPositiveButton(R.string.media_access_open) { _, _ -> runCatching { startActivity(settingsIntent) } }
+        }
+        b.show()
     }
 
     // ---- Cielo air conditioner ------------------------------------------------------------

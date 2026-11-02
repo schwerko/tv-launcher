@@ -118,6 +118,8 @@
         android:orientation="horizontal">
 
         <include layout="@layout/ac_card" />
+
+        <include layout="@layout/media_card" />
     </LinearLayout>
 
     <!-- Up to 7 days of calendar events, scrolls sideways; each card is focusable. -->

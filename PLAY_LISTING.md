@@ -60,6 +60,7 @@ No, the app contains no ads.
 - **No `QUERY_ALL_PACKAGES`.** The app finds installed apps through a `<queries>` block (MAIN/LAUNCHER and MAIN/LEANBACK_LAUNCHER intents, plus the six streaming apps it deep-links into and the speech-recogniser intent), which is the mechanism Play prefers, so the "Package visibility" declaration form does not apply. If Play ever shows that form anyway, the answer is: *launcher app; installed apps are listed only to be opened from the grid and never transmitted.*
 - **`RECORD_AUDIO`** – a runtime permission; no separate form, but the reviewer will look for it in the data-safety answers below. In-app use: *voice questions in the Ask panel; the microphone is used only while the user has pressed Speak, through the system speech recogniser.* The manifest marks the microphone as optional hardware (`uses-feature … microphone required=false`) so boxes without one can still install the app.
 - `REQUEST_DELETE_PACKAGES`, `INTERNET`, `ACCESS_NETWORK_STATE` – normal permissions, nothing to declare.
+- **Notification access** (`BIND_NOTIFICATION_LISTENER_SERVICE` on `MediaListener`) – not a form in the console, but reviewers check that the use is explained in the app and the policy. Wording: *used only to list active media sessions for the Now playing card; notification contents are never read, stored or transmitted; the feature is optional.*
 
 ### Data safety form
 

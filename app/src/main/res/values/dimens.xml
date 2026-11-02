@@ -16,4 +16,6 @@
     <dimen name="ac_button_text">12sp</dimen>
     <dimen name="ac_temp_text">18sp</dimen>
     <dimen name="ac_temp_min_width">44dp</dimen>
+    <dimen name="media_art_size">48dp</dimen>
+    <dimen name="media_text_max_width">180dp</dimen>
 </resources>

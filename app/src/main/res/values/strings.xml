@@ -40,6 +40,15 @@
     <string name="cielo_room">Room %1$s</string>
     <string name="cielo_fan">Fan %1$s</string>
     <string name="ac_power">Power</string>
+    <string name="media_previous">Previous</string>
+    <string name="media_play_pause">Play or pause</string>
+    <string name="media_next">Next</string>
+    <string name="setting_media">Now playing card: %1$s</string>
+    <string name="media_on">On</string>
+    <string name="media_needs_access">Needs notification access</string>
+    <string name="media_access_title">Now playing card</string>
+    <string name="media_access_body">To show what Spotify, YouTube or another app is playing, with play/pause and skip buttons, the launcher needs Android\'s "notification access" permission. It uses it only to list media sessions; notification contents are never read or stored.\n\nOn phones and tablets the next screen has the switch. On Google TV the screen is usually hidden, so grant it once over adb:\n\nadb shell cmd notification allow_listener com.azura.tvlauncher/.MediaListener</string>
+    <string name="media_access_open">Open settings</string>
     <string name="ask">Ask</string>
     <string name="ask_speak">🎤 Speak</string>
     <string name="ask_send">Send</string>

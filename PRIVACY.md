@@ -41,6 +41,10 @@ Stored in the app's private storage, readable only by the app:
 
 Android app backup is turned off for this app, so these values are not copied to a cloud backup. Uninstalling the app, or clearing its data in Android settings, deletes all of it. Revoke an API key at the service that issued it if you want to be sure it can no longer be used.
 
+## Now playing card (notification access)
+
+Android only lets an app list the device's active media sessions (what Spotify, YouTube and similar apps are playing) if that app holds the "notification access" permission. TV Launcher asks for it solely for the Now playing card: track title, artist, album art and the play, pause and skip buttons. The app never reads, stores or forwards the contents of notifications, and the permission is optional; without it the card simply stays hidden.
+
 ## Installed apps
 
 As a home screen, the app asks Android for the apps that can be opened from a launcher so it can show them in its grid. That list is used only to draw the grid and is never transmitted.

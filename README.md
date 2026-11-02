@@ -42,6 +42,17 @@ recommendations, no accounts.
   key at home.cielowigle.com (menu › Home Assistant) and enter it under Settings › Cielo AC.
   A key signs in only once, so the app keeps the token it receives; if you ever reinstall from
   scratch (or clear the app's data), revoke the key and generate a new one (3 per month).
+- Now playing: while Spotify, YouTube or any other app is playing or paused, a card shows the
+  track, artist and album art with previous / play-pause / next buttons; press the title to
+  jump into the app. It reads the device's media sessions, which Android only allows for apps
+  with "notification access" (notification contents are never read). Phones and tablets have
+  the switch under Settings › Apps › Special app access › Notification access (the launcher's
+  Settings › "Now playing card" opens it); Google TV hides that screen, so grant it once:
+
+  ```bash
+  adb shell cmd notification allow_listener com.azura.tvlauncher/.MediaListener
+  ```
+
 - Ask: an "Ask" button in the header opens a panel where you speak or type a question.
   Voice uses the box's own speech recogniser from inside the launcher: press Speak and talk
   towards the remote without pressing its microphone button (that button is wired to Google

@@ -79,6 +79,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Lets the launcher list active media sessions for the Now-playing card. It ignores
+             notifications; the user grants it under Notification access (or over adb on TV). -->
+        <service
+            android:name=".MediaListener"
+            android:exported="true"
+            android:label="@string/media_access_title"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Screensaver (Android "Dream"): nature photos from around the world. -->
         <service
             android:name=".SlideshowDream"
