@@ -3,9 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-<LinearLayout
+<!-- The page scrolls vertically once the optional rows push the grid down. -->
+<ScrollView
+    android:id="@+id/page"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:scrollbars="none">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:clipChildren="false"
     android:clipToPadding="false"
@@ -72,6 +83,16 @@
                 android:ellipsize="end"
                 android:textSize="@dimen/weather_desc_text"
                 android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/sunTimes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:textSize="@dimen/sun_text"
+                android:textColor="@color/text_secondary"
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView
@@ -90,8 +111,7 @@
             android:clickable="true"
             android:text="@string/ask"
             android:textSize="@dimen/header_button_text"
-            android:textColor="@color/text_primary"
-            android:nextFocusDown="@+id/grid" />
+            android:textColor="@color/text_primary" />
 
         <TextView
             android:id="@+id/settingsButton"
@@ -108,8 +128,7 @@
             android:clickable="true"
             android:text="@string/settings"
             android:textSize="@dimen/header_button_text"
-            android:textColor="@color/text_primary"
-            android:nextFocusDown="@+id/grid" />
+            android:textColor="@color/text_primary" />
     </LinearLayout>
 
     <!-- Now-playing card (shown while a media app is playing or paused). -->
@@ -119,8 +138,31 @@
         android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
+        <include layout="@layout/tonight_card" />
+
         <include layout="@layout/media_card" />
     </LinearLayout>
+
+    <!-- Home Assistant entities chosen in Settings; chips toggle lights, switches, scenes. -->
+    <HorizontalScrollView
+        android:id="@+id/haScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/haRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
 
     <!-- Up to 7 days of calendar events, scrolls sideways; each card is focusable. -->
     <HorizontalScrollView
@@ -152,6 +194,28 @@
         android:textColor="@color/text_secondary"
         android:visibility="gone" />
 
+    <!-- Headlines from the RSS feeds chosen in Settings; press a card for the summary. -->
+    <HorizontalScrollView
+        android:id="@+id/newsScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/newsRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -167,14 +231,14 @@
         android:id="@+id/grid"
         android:clipChildren="false"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:paddingBottom="@dimen/screen_padding_v"
         android:paddingTop="8dp"
         android:nextFocusUp="@id/settingsButton"
         android:descendantFocusability="afterDescendants" />
 </LinearLayout>
+</ScrollView>
 
     <!-- Credit for the current background photo (author, licence, source). -->
     <TextView

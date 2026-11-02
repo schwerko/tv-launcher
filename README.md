@@ -13,7 +13,8 @@ recommendations, no accounts.
 - Clock and date, respecting the box's 12/24-hour setting.
 - Weather from Open-Meteo (free, no key) for a city you type in Settings; until you do, it uses
   the city of the box's time zone (e.g. "America/Phoenix" → Phoenix). Nothing about the box's
-  network or location is sent anywhere.
+  network or location is sent anywhere. Today's sunrise and sunset for that city are shown
+  under the conditions.
 - Calendar: paste one or more private ICS feed URLs, separated by spaces (Google Calendar:
   Settings → the calendar → "Secret address in iCal format", one per calendar; Outlook:
   Settings → Calendar → Shared calendars → Publish → ICS link). Shows one card per event for the
@@ -53,6 +54,26 @@ recommendations, no accounts.
   adb shell cmd notification allow_listener com.azura.tvlauncher/.MediaListener
   ```
 
+- News headlines: Settings › "News headlines" offers a few well-known feeds (BBC, NPR, The
+  Guardian, The New York Times, Al Jazeera, ESPN, Ars Technica) to tick, or any RSS/Atom URLs
+  you paste. Headlines from all chosen feeds, newest first, fill a row that scrolls sideways;
+  press one for the summary and an "Open article" button (needs a browser on the device).
+  Refreshes every 30 minutes; each feed is fetched straight from its publisher.
+- What's on tonight: once a day the Ask assistant (whichever of Gemini or Claude is configured)
+  writes three short lines, one live event or game, one new streaming pick and one classic,
+  shown on a "Tonight" card. Press it for the full lines, "▶" buttons that open the titles in
+  your streaming apps, "Ask again" and "Ask more". With Gemini (no live web) the first line is
+  a best guess from memory; with Claude it comes from a web search. Turn the card off under
+  Settings › "What's on tonight card". Costs one assistant question per day.
+- Home Assistant: a row of chips for lights, switches, fans, covers, scenes, scripts and sensors
+  from your own Home Assistant server. Settings › Home Assistant asks for the server address
+  (e.g. `http://homeassistant.local:8123`), a long-lived access token (Home Assistant › your
+  profile › Security › "Create token"; on a TV, type it with `adb shell input text '<token>'`
+  while the field is focused) and then which entities to show. Pressing a chip toggles a
+  light/switch/fan/cover or runs a scene/script; sensors just show their value. States refresh
+  every minute. Plain `http://` to the server on your own network is allowed (the manifest
+  permits cleartext traffic for this); everything else the app does is HTTPS. `tools/mock_ha.py`
+  is a stand-in server for testing the card without a Home Assistant installation.
 - Ask: an "Ask" button in the header opens a panel where you speak or type a question.
   Voice uses the box's own speech recogniser from inside the launcher: press Speak and talk
   towards the remote without pressing its microphone button (that button is wired to Google
@@ -69,6 +90,8 @@ recommendations, no accounts.
   launcher asks the model for the title's own page and opens that (Claude looks it up on the
   web; Gemini answers from memory and may miss); if nothing is found it opens the app's search.
 - Refreshes automatically when apps are installed or removed.
+- The page scrolls vertically when the optional rows (Tonight, Home Assistant, calendar, news)
+  push the app grid down; D-pad focus scrolls it.
 
 ## Build
 
@@ -206,6 +229,9 @@ Focus the **Settings** button at the top right and press OK:
 - Temperature unit: toggles °C / °F.
 - Calendar feed: paste your ICS URL (typing on a TV is slow; pasting works if your remote app
   supports it, or send text with `adb shell input text '...'` while the field is focused).
+- News headlines: tick well-known feeds or paste RSS/Atom URLs.
+- Home Assistant: server address, access token, and which entities to show.
+- What's on tonight card: on or off (needs a Gemini or Claude key).
 - Background: plain dark, daily photos from Wikimedia Commons, Unsplash (asks for your access
   key), or your own image URLs.
 - Ask uses / Gemini key / Claude key: pick the model and paste its key.

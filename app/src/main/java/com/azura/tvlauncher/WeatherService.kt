@@ -4,13 +4,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.URLEncoder
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.roundToInt
 
 object WeatherService {
 
-    data class Weather(val tempC: Double, val code: Int, val place: String) {
+    data class Weather(
+        val tempC: Double,
+        val code: Int,
+        val place: String,
+        /** Today's sunrise and sunset in the place's local time; null when Open-Meteo gave none. */
+        val sunrise: LocalTime? = null,
+        val sunset: LocalTime? = null,
+    ) {
         fun temperature(fahrenheit: Boolean): String {
             val t = if (fahrenheit) tempC * 9 / 5 + 32 else tempC
             return "${t.roundToInt()}°"
@@ -32,14 +41,17 @@ object WeatherService {
             val json = JSONObject(
                 Net.get(
                     "https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}" +
-                        "&current=temperature_2m,weather_code&timezone=auto"
+                        "&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=auto"
                 )
             )
             val current = json.getJSONObject("current")
+            val daily = json.optJSONObject("daily")
             Weather(
                 tempC = current.getDouble("temperature_2m"),
                 code = current.getInt("weather_code"),
                 place = place.name,
+                sunrise = daily?.optJSONArray("sunrise")?.optString(0)?.let(::localTime),
+                sunset = daily?.optJSONArray("sunset")?.optString(0)?.let(::localTime),
             )
         }.getOrNull()
     }
@@ -57,6 +69,10 @@ object WeatherService {
         if (usable) return leaf
         return Locale.getDefault().displayCountry.ifBlank { "London" }
     }
+
+    /** Open-Meteo's daily times come as "2026-11-01T06:52" in the place's own zone. */
+    private fun localTime(iso: String): LocalTime? =
+        runCatching { LocalDateTime.parse(iso).toLocalTime() }.getOrNull()
 
     private fun geocode(city: String): Place {
         val q = URLEncoder.encode(city, "UTF-8")

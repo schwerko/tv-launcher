@@ -42,7 +42,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -58,6 +60,12 @@ class MainActivity : Activity() {
     private lateinit var dateView: TextView
     private lateinit var weatherTemp: TextView
     private lateinit var weatherDesc: TextView
+    private lateinit var sunTimes: TextView
+    private lateinit var newsScroll: View
+    private lateinit var newsRow: LinearLayout
+    private lateinit var haScroll: View
+    private lateinit var haRow: LinearLayout
+    private lateinit var tonightCard: View
     private lateinit var agendaScroll: View
     private lateinit var agendaRow: LinearLayout
     private lateinit var agendaStatus: TextView
@@ -67,6 +75,22 @@ class MainActivity : Activity() {
     private var allApps: List<AppInfo> = emptyList()
     private var lastWeatherAt = 0L
     private var lastAgendaAt = 0L
+    private var lastNewsAt = 0L
+    private var lastTonightAt = 0L
+    private var tonightBusy = false
+
+    private var ha: HomeAssistant? = null
+    private var haEntities: List<HomeAssistant.Entity> = emptyList()
+    private var lastHaAt = 0L
+    private var haBusy = false
+    private var haFailed = false
+    private val haTick = object : Runnable {
+        override fun run() {
+            refreshHa(force = false)
+            handler.postDelayed(this, HA_TICK_MS)
+        }
+    }
+    private val haResync = Runnable { refreshHa(force = true) }
 
     private var assistant: Assistant? = null
     private var askDialog: AskDialog? = null
@@ -121,6 +145,12 @@ class MainActivity : Activity() {
         dateView = findViewById(R.id.date)
         weatherTemp = findViewById(R.id.weatherTemp)
         weatherDesc = findViewById(R.id.weatherDesc)
+        sunTimes = findViewById(R.id.sunTimes)
+        newsScroll = findViewById(R.id.newsScroll)
+        newsRow = findViewById(R.id.newsRow)
+        haScroll = findViewById(R.id.haScroll)
+        haRow = findViewById(R.id.haRow)
+        tonightCard = findViewById(R.id.tonightCard)
         agendaScroll = findViewById(R.id.agendaScroll)
         agendaRow = findViewById(R.id.agendaRow)
         agendaStatus = findViewById(R.id.agendaStatus)
@@ -130,7 +160,8 @@ class MainActivity : Activity() {
         adapter = AppAdapter(onClick = ::launchApp, onLongClick = ::showAppOptions)
         grid.layoutManager = GridLayoutManager(this, spanCount())
         grid.adapter = adapter
-        grid.setHasFixedSize(true)
+        // The grid sits in the page's ScrollView and shows all its rows; the page scrolls instead.
+        grid.isNestedScrollingEnabled = false
         grid.itemAnimator = null
 
         settingsButton.setOnClickListener { showSettings() }
@@ -143,6 +174,11 @@ class MainActivity : Activity() {
         }
         setupAcCard()
         setupMediaCard()
+        tonightCard.setOnClickListener { showTonightDetails() }
+        tonightCard.setOnFocusChangeListener { v, focused ->
+            val scale = if (focused) 1.02f else 1f
+            v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+        }
         settingsButton.setOnFocusChangeListener { v, focused ->
             val scale = if (focused) 1.08f else 1f
             v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
@@ -190,6 +226,8 @@ class MainActivity : Activity() {
         refreshWallpaper(force = false)
         handler.removeCallbacks(acTick)
         handler.post(acTick)
+        handler.removeCallbacks(haTick)
+        handler.post(haTick)
         startMediaWatch()
     }
 
@@ -200,6 +238,8 @@ class MainActivity : Activity() {
         handler.removeCallbacks(wallpaperRetry)
         handler.removeCallbacks(acTick)
         handler.removeCallbacks(acResync)
+        handler.removeCallbacks(haTick)
+        handler.removeCallbacks(haResync)
         stopMediaWatch()
     }
 
@@ -327,6 +367,18 @@ class MainActivity : Activity() {
                     prefs.icsUrl = it
                     refreshWidgets(force = true)
                 }
+            },
+            getString(R.string.setting_news, newsSummary()) to { showNewsChooser() },
+            getString(R.string.setting_ha, if (prefs.haUrl.isBlank()) getString(R.string.not_set) else prefs.haUrl.removePrefix("http://").removePrefix("https://")) to {
+                showHaSettings()
+            },
+            getString(R.string.setting_tonight, getString(when {
+                !prefs.tonightEnabled -> R.string.tonight_off
+                prefs.geminiApiKey.isBlank() && prefs.claudeApiKey.isBlank() -> R.string.tonight_needs_key
+                else -> R.string.tonight_on
+            })) to {
+                prefs.tonightEnabled = !prefs.tonightEnabled
+                refreshTonight(force = false)
             },
             getString(R.string.setting_background, background) to { showBackgroundChooser() },
             getString(R.string.setting_assistant, if (prefs.assistant == "gemini") "Gemini (free)" else "Claude") to {
@@ -473,30 +525,44 @@ class MainActivity : Activity() {
                 if (w == null) {
                     weatherTemp.text = ""
                     weatherDesc.text = getString(R.string.weather_unavailable)
+                    sunTimes.visibility = View.GONE
                 } else {
                     weatherTemp.text = "${w.symbol} ${w.temperature(prefs.fahrenheit)}"
                     weatherDesc.text = if (w.place.isBlank()) w.description else "${w.description} · ${w.place}"
+                    if (w.sunrise != null && w.sunset != null) {
+                        sunTimes.text = getString(R.string.sun_times, clockText(w.sunrise), clockText(w.sunset))
+                        sunTimes.visibility = View.VISIBLE
+                    } else {
+                        sunTimes.visibility = View.GONE
+                    }
                 }
             }
         }
+        refreshNews(force)
+        refreshTonight(force)
         if (force || now - lastAgendaAt > 15 * 60_000L) {
             lastAgendaAt = now
             val url = prefs.icsUrl
             if (url.isBlank()) {
                 agendaScroll.visibility = View.GONE
                 agendaStatus.visibility = View.GONE
-                return
-            }
-            val urls = url.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }
-            scope.launch {
-                val events = CalendarService.upcoming(urls, max = MAX_EVENT_CARDS)
-                when {
-                    events == null -> showAgendaStatus(getString(R.string.agenda_error))
-                    events.isEmpty() -> showAgendaStatus(getString(R.string.agenda_empty))
-                    else -> renderAgenda(events)
+            } else {
+                val urls = url.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }
+                scope.launch {
+                    val events = CalendarService.upcoming(urls, max = MAX_EVENT_CARDS)
+                    when {
+                        events == null -> showAgendaStatus(getString(R.string.agenda_error))
+                        events.isEmpty() -> showAgendaStatus(getString(R.string.agenda_empty))
+                        else -> renderAgenda(events)
+                    }
                 }
             }
         }
+    }
+
+    private fun clockText(t: LocalTime): String {
+        val pattern = if (android.text.format.DateFormat.is24HourFormat(this)) "HH:mm" else "h:mm a"
+        return t.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
     }
 
     private fun showAgendaStatus(text: String) {
@@ -653,16 +719,26 @@ class MainActivity : Activity() {
                 .show()
             return
         }
-        val where = weatherDesc.text.toString().substringAfter("·", "").trim().ifBlank { WeatherService.defaultCity() }
-        val client = assistant ?: (if (useGemini) GeminiClient(key, where) else ClaudeClient(key, where)).also { assistant = it }
-        val dlg = askDialog ?: AskDialog(this, scope, client, ::startSpeech).also { askDialog = it }
-        dlg.show()
+        assistantAndPanel()?.second?.show()
     }
 
     private fun resetAssistant() {
         assistant = null
         askDialog?.release()
         askDialog = null
+        prefs.tonightDate = ""
+        refreshTonight(force = false)
+    }
+
+    /** The configured assistant and its panel (created but not shown), or null without a key. */
+    private fun assistantAndPanel(): Pair<Assistant, AskDialog>? {
+        val useGemini = prefs.assistant == "gemini"
+        val key = if (useGemini) prefs.geminiApiKey else prefs.claudeApiKey
+        if (key.isBlank()) return null
+        val where = weatherDesc.text.toString().substringAfter("·", "").trim().ifBlank { WeatherService.defaultCity() }
+        val client = assistant ?: (if (useGemini) GeminiClient(key, where) else ClaudeClient(key, where)).also { assistant = it }
+        val dlg = askDialog ?: AskDialog(this, scope, client, ::startSpeech).also { askDialog = it }
+        return client to dlg
     }
 
     private fun startSpeech() {
@@ -813,6 +889,335 @@ class MainActivity : Activity() {
             b.setPositiveButton(R.string.media_access_open) { _, _ -> runCatching { startActivity(settingsIntent) } }
         }
         b.show()
+    }
+
+    // ---- News headlines (RSS/Atom) ----------------------------------------------------------
+
+    private fun newsUrls(): List<String> = prefs.newsUrls.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }
+
+    private fun newsSummary(): String {
+        val n = newsUrls().size
+        return if (n == 0) getString(R.string.not_set) else getString(R.string.news_feeds_count, n)
+    }
+
+    private fun refreshNews(force: Boolean) {
+        val urls = newsUrls()
+        if (urls.isEmpty()) {
+            newsScroll.visibility = View.GONE
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (!force && now - lastNewsAt < NEWS_REFRESH_MS) return
+        lastNewsAt = now
+        scope.launch {
+            val items = NewsService.fetch(urls, MAX_NEWS_CARDS)
+            if (items == null) {
+                if (newsRow.childCount == 0) Toast.makeText(this@MainActivity, R.string.news_error, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            renderNews(items)
+        }
+    }
+
+    private fun renderNews(items: List<NewsService.Item>) {
+        val inflater = LayoutInflater.from(this)
+        val hadFocus = currentFocus?.let { newsRow.indexOfChild(it) } ?: -1
+        newsRow.removeAllViews()
+        for (item in items) {
+            val card = inflater.inflate(R.layout.item_news, newsRow, false)
+            card.findViewById<TextView>(R.id.newsSource).text = item.source
+            card.findViewById<TextView>(R.id.newsTitle).text = item.title
+            card.findViewById<TextView>(R.id.newsAge).text = ageLabel(item.published)
+            card.setOnFocusChangeListener { v, focused ->
+                val scale = if (focused) 1.06f else 1f
+                v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+            }
+            card.setOnClickListener { showNewsDetails(item) }
+            newsRow.addView(card)
+        }
+        newsScroll.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+        if (hadFocus in 0 until newsRow.childCount) newsRow.getChildAt(hadFocus).requestFocus()
+    }
+
+    private fun ageLabel(published: Long): String {
+        if (published <= 0) return ""
+        val minutes = ((System.currentTimeMillis() - published) / 60_000L).coerceAtLeast(0)
+        return when {
+            minutes < 2 -> getString(R.string.news_just_now)
+            minutes < 60 -> getString(R.string.news_minutes_ago, minutes.toInt())
+            minutes < 24 * 60 -> getString(R.string.news_hours_ago, (minutes / 60).toInt())
+            else -> getString(R.string.news_days_ago, (minutes / (24 * 60)).toInt())
+        }
+    }
+
+    private fun showNewsDetails(item: NewsService.Item) {
+        val meta = listOf(item.source, ageLabel(item.published)).filter { it.isNotBlank() }.joinToString(" · ")
+        val body = buildString {
+            append(meta)
+            if (item.summary.isNotBlank() && item.summary != item.title) append("\n\n").append(item.summary)
+        }
+        val b = dialog().setTitle(item.title).setMessage(body).setNegativeButton(android.R.string.ok, null)
+        if (item.link.startsWith("http")) {
+            b.setPositiveButton(R.string.news_open) { _, _ ->
+                runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.link))) }
+                    .onFailure { Toast.makeText(this, R.string.ask_no_app, Toast.LENGTH_SHORT).show() }
+            }
+        }
+        b.show()
+    }
+
+    /** Tick the well-known feeds, or type other URLs. */
+    private fun showNewsChooser() {
+        val current = newsUrls().toMutableList()
+        val presets = NewsService.PRESETS
+        val checked = BooleanArray(presets.size) { presets[it].url in current }
+        dialog().setTitle(R.string.news_title)
+            .setMultiChoiceItems(presets.map { it.label }.toTypedArray(), checked) { _, which, isChecked ->
+                val url = presets[which].url
+                if (isChecked) { if (url !in current) current.add(url) } else current.remove(url)
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                prefs.newsUrls = current.joinToString(" ")
+                refreshNews(force = true)
+            }
+            .setNeutralButton(R.string.news_custom) { _, _ ->
+                val custom = current.filter { url -> presets.none { it.url == url } }.joinToString(" ")
+                promptText(getString(R.string.news_custom_prompt), custom, "https://example.com/feed.xml") { typed ->
+                    val keep = current.filter { url -> presets.any { it.url == url } }
+                    prefs.newsUrls = (keep + typed.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }).joinToString(" ")
+                    refreshNews(force = true)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    // ---- What's on tonight (written by the Ask assistant once a day) -----------------------
+
+    private fun refreshTonight(force: Boolean) {
+        if (!prefs.tonightEnabled) {
+            tonightCard.visibility = View.GONE
+            return
+        }
+        val (client, _) = assistantAndPanel() ?: run { tonightCard.visibility = View.GONE; return }
+        val today = LocalDate.now().toString()
+        if (prefs.tonightDate == today && prefs.tonightText.isNotBlank()) {
+            renderTonight(prefs.tonightText)
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (tonightBusy || (!force && now - lastTonightAt < TONIGHT_RETRY_MS)) return
+        lastTonightAt = now
+        tonightBusy = true
+        if (prefs.tonightText.isBlank()) renderTonight(getString(R.string.tonight_loading, client.name))
+        val date = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale.getDefault()))
+        val question = "It is $date. What is worth watching tonight? Answer with exactly three lines and nothing " +
+            "else, each at most fourteen words, in this order: a live sport, game or TV event on tonight with its " +
+            "channel or service and local start time; a new or much talked-about series or film on a streaming " +
+            "service; a great film for a rewatch. If you cannot be sure of tonight's live schedule, make the first " +
+            "line another streaming pick instead of guessing. Write each line as the title, a colon, then why. " +
+            "No numbering, no introduction."
+        scope.launch {
+            try {
+                val a = client.ask(question)
+                if (a.refused || a.text.isBlank()) throw IllegalStateException(getString(R.string.ask_empty))
+                prefs.tonightText = a.text.lines().map { it.trim().trimStart('-', '•', '*', ' ') }
+                    .filter { it.isNotBlank() }.take(3).joinToString("\n")
+                prefs.tonightTitles = a.titles
+                prefs.tonightDate = today
+                renderTonight(prefs.tonightText)
+            } catch (e: Exception) {
+                android.util.Log.w("Tonight", "failed", e)
+                if (prefs.tonightText.isBlank()) {
+                    renderTonight(getString(R.string.tonight_failed, e.message ?: client.name))
+                } else {
+                    renderTonight(prefs.tonightText)
+                }
+            } finally {
+                tonightBusy = false
+            }
+        }
+    }
+
+    private fun renderTonight(text: String) {
+        findViewById<TextView>(R.id.tonightText).text = text
+        tonightCard.visibility = View.VISIBLE
+    }
+
+    private fun showTonightDetails() {
+        val (client, panel) = assistantAndPanel() ?: return
+        val text = prefs.tonightText.ifBlank { findViewById<TextView>(R.id.tonightText).text.toString() }
+        val titles = prefs.tonightTitles
+        val b = dialog().setTitle(R.string.tonight_heading)
+            .setNeutralButton(R.string.tonight_refresh) { _, _ ->
+                prefs.tonightDate = ""
+                refreshTonight(force = true)
+            }
+            .setPositiveButton(R.string.tonight_more) { _, _ -> panel.show() }
+            .setNegativeButton(android.R.string.cancel, null)
+        if (titles.isEmpty()) {
+            b.setMessage(text)
+        } else {
+            // The lines, then one row per title that can be opened in a streaming app.
+            val items = (text.lines().map { it } + titles.map { getString(R.string.ask_open_title, it) }).toTypedArray()
+            val lineCount = text.lines().size
+            b.setItems(items) { _, which -> if (which >= lineCount) panel.openTitle(titles[which - lineCount]) }
+        }
+        b.show()
+        android.util.Log.d("Tonight", "by ${client.name}")
+    }
+
+    // ---- Home Assistant -------------------------------------------------------------------
+
+    private fun haClient(): HomeAssistant? {
+        val url = prefs.haUrl
+        val token = prefs.haToken
+        if (url.isBlank() || token.isBlank()) return null
+        return ha ?: HomeAssistant(url, token).also { ha = it }
+    }
+
+    private fun refreshHa(force: Boolean) {
+        val client = haClient()
+        val wanted = prefs.haEntities
+        if (client == null || wanted.isEmpty()) {
+            haScroll.visibility = View.GONE
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (!force && now - lastHaAt < HA_REFRESH_MS) return
+        lastHaAt = now
+        scope.launch {
+            try {
+                val byId = client.states().associateBy { it.id }
+                haEntities = wanted.mapNotNull { byId[it] }
+                haFailed = false
+                haScroll.alpha = 1f
+                renderHa()
+            } catch (e: HomeAssistant.AuthException) {
+                if (!haFailed) Toast.makeText(this@MainActivity, R.string.ha_auth_failed, Toast.LENGTH_LONG).show()
+                haFailed = true
+                haScroll.visibility = View.GONE
+            } catch (e: Exception) {
+                android.util.Log.w("HA", "refresh failed", e)
+                if (!haFailed && haEntities.isEmpty()) {
+                    Toast.makeText(this@MainActivity, getString(R.string.ha_error, prefs.haUrl), Toast.LENGTH_SHORT).show()
+                }
+                haFailed = true
+                // Keep the last known chips but dim them: the server is unreachable right now.
+                haScroll.alpha = 0.5f
+            }
+        }
+    }
+
+    private fun renderHa() {
+        val inflater = LayoutInflater.from(this)
+        val hadFocus = currentFocus?.let { haRow.indexOfChild(it) } ?: -1
+        haRow.removeAllViews()
+        for (e in haEntities) {
+            val chip = inflater.inflate(R.layout.item_ha, haRow, false)
+            chip.findViewById<TextView>(R.id.haName).text = e.name
+            chip.findViewById<TextView>(R.id.haState).text = e.stateLabel()
+            chip.alpha = if (e.state == "unavailable") 0.5f else 1f
+            chip.setOnFocusChangeListener { v, focused ->
+                val scale = if (focused) 1.08f else 1f
+                v.animate().scaleX(scale).scaleY(scale).setDuration(100).start()
+            }
+            chip.setOnClickListener { pressHa(e) }
+            haRow.addView(chip)
+        }
+        haScroll.visibility = if (haEntities.isEmpty()) View.GONE else View.VISIBLE
+        if (hadFocus in 0 until haRow.childCount) haRow.getChildAt(hadFocus).requestFocus()
+    }
+
+    private fun pressHa(e: HomeAssistant.Entity) {
+        val client = haClient() ?: return
+        if (!e.actionable) {
+            dialog().setTitle(e.name).setMessage("${e.id}\n${e.stateLabel()}").setPositiveButton(android.R.string.ok, null).show()
+            return
+        }
+        if (haBusy) return
+        haBusy = true
+        scope.launch {
+            try {
+                client.act(e)
+                // Optimistic flip for toggles; the real state arrives with the resync.
+                if (e.domain in HomeAssistant.TOGGLE && (e.state == "on" || e.state == "off")) {
+                    haEntities = haEntities.map { if (it.id == e.id) it.copy(state = if (e.state == "on") "off" else "on") else it }
+                    renderHa()
+                }
+                handler.removeCallbacks(haResync)
+                handler.postDelayed(haResync, HA_RESYNC_MS)
+            } catch (ex: HomeAssistant.AuthException) {
+                Toast.makeText(this@MainActivity, R.string.ha_auth_failed, Toast.LENGTH_LONG).show()
+            } catch (ex: Exception) {
+                android.util.Log.w("HA", "action failed", ex)
+                Toast.makeText(this@MainActivity, getString(R.string.ha_action_failed, ex.message ?: ""), Toast.LENGTH_SHORT).show()
+            } finally {
+                haBusy = false
+            }
+        }
+    }
+
+    private fun showHaSettings() {
+        val items: List<Pair<String, () -> Unit>> = listOf(
+            getString(R.string.ha_url_item, prefs.haUrl.ifBlank { getString(R.string.not_set) }) to {
+                promptText(getString(R.string.ha_url_prompt), prefs.haUrl, "http://homeassistant.local:8123") {
+                    prefs.haUrl = it
+                    ha = null
+                    haFailed = false
+                    refreshHa(force = true)
+                }
+            },
+            getString(R.string.ha_token_item, if (prefs.haToken.isBlank()) getString(R.string.not_set) else getString(R.string.configured)) to {
+                promptText(getString(R.string.ha_token_prompt), prefs.haToken, "") {
+                    prefs.haToken = it
+                    ha = null
+                    haFailed = false
+                    refreshHa(force = true)
+                }
+            },
+            getString(R.string.ha_entities_item, prefs.haEntities.size) to { showHaEntityChooser() },
+        )
+        // (No setMessage here: an AlertDialog shows either a message or a list, not both.)
+        dialog().setTitle(R.string.ha_title)
+            .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
+            .show()
+    }
+
+    /** Lists the server's lights, switches, scenes, scripts and sensors; ticked ones go on the row. */
+    private fun showHaEntityChooser() {
+        val client = haClient()
+        if (client == null) {
+            Toast.makeText(this, R.string.ha_help, Toast.LENGTH_LONG).show()
+            return
+        }
+        scope.launch {
+            val all = try {
+                client.states().filter { it.supported }.sortedWith(compareBy({ it.domain }, { it.name.lowercase() }))
+            } catch (e: HomeAssistant.AuthException) {
+                Toast.makeText(this@MainActivity, R.string.ha_auth_failed, Toast.LENGTH_LONG).show(); return@launch
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, getString(R.string.ha_error, prefs.haUrl), Toast.LENGTH_LONG).show(); return@launch
+            }
+            if (all.isEmpty()) {
+                Toast.makeText(this@MainActivity, R.string.ha_entities_none, Toast.LENGTH_LONG).show(); return@launch
+            }
+            val chosen = prefs.haEntities.toMutableList()
+            val checked = BooleanArray(all.size) { all[it].id in chosen }
+            val labels = all.map { "${it.name}  ·  ${it.domain.replace('_', ' ')}" }.toTypedArray()
+            dialog().setTitle(R.string.ha_entities_title)
+                .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                    val id = all[which].id
+                    if (isChecked) { if (id !in chosen) chosen.add(id) } else chosen.remove(id)
+                }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    // Keep the list's own order (by kind, then name) so the row is predictable.
+                    prefs.haEntities = all.map { it.id }.filter { it in chosen }
+                    refreshHa(force = true)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
     }
 
     // ---- Cielo air conditioner ------------------------------------------------------------
@@ -972,6 +1377,12 @@ class MainActivity : Activity() {
         const val AC_TICK_MS = 30_000L
         const val AC_RESYNC_MS = 8_000L
         const val MAX_EVENT_CARDS = 40
+        const val MAX_NEWS_CARDS = 30
+        const val NEWS_REFRESH_MS = 30 * 60_000L
+        const val TONIGHT_RETRY_MS = 30 * 60_000L
+        const val HA_REFRESH_MS = 60_000L
+        const val HA_TICK_MS = 30_000L
+        const val HA_RESYNC_MS = 1_500L
         const val SLIDE_INTERVAL_MS = 10 * 60_000L
         const val WALLPAPER_LIST_MAX_AGE_MS = 6 * 60 * 60_000L
         const val WALLPAPER_RETRY_MS = 3 * 60_000L

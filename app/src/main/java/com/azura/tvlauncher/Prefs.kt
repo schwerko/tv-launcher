@@ -74,4 +74,40 @@ class Prefs(context: Context) {
     var icsUrl: String
         get() = sp.getString("ics", "") ?: ""
         set(value) = sp.edit().putString("ics", value.trim()).apply()
+
+    /** RSS/Atom feed URLs for the headlines row, separated by whitespace. */
+    var newsUrls: String
+        get() = sp.getString("news", "") ?: ""
+        set(value) = sp.edit().putString("news", value.trim()).apply()
+
+    /** Home Assistant server, e.g. http://homeassistant.local:8123. */
+    var haUrl: String
+        get() = sp.getString("ha_url", "") ?: ""
+        set(value) = sp.edit().putString("ha_url", value.trim()).apply()
+
+    /** Long-lived access token from the user's Home Assistant profile page. */
+    var haToken: String
+        get() = sp.getString("ha_token", "") ?: ""
+        set(value) = sp.edit().putString("ha_token", value.trim()).apply()
+
+    /** Entity ids shown on the Home Assistant row, in display order, separated by spaces. */
+    var haEntities: List<String>
+        get() = (sp.getString("ha_entities", "") ?: "").split(' ').filter { it.isNotBlank() }
+        set(value) = sp.edit().putString("ha_entities", value.joinToString(" ")).apply()
+
+    /** Whether the "What's on tonight" card is wanted (it also needs an Ask key). */
+    var tonightEnabled: Boolean
+        get() = sp.getBoolean("tonight_enabled", true)
+        set(value) = sp.edit().putBoolean("tonight_enabled", value).apply()
+
+    /** The "What's on tonight" lines, cached for the day they were written. */
+    var tonightDate: String
+        get() = sp.getString("tonight_date", "") ?: ""
+        set(value) = sp.edit().putString("tonight_date", value).apply()
+    var tonightText: String
+        get() = sp.getString("tonight_text", "") ?: ""
+        set(value) = sp.edit().putString("tonight_text", value).apply()
+    var tonightTitles: List<String>
+        get() = (sp.getString("tonight_titles", "") ?: "").split('|').map { it.trim() }.filter { it.isNotBlank() }
+        set(value) = sp.edit().putString("tonight_titles", value.joinToString("|")).apply()
 }

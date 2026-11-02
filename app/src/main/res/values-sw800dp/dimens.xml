@@ -18,4 +18,9 @@
     <dimen name="ac_temp_min_width">60dp</dimen>
     <dimen name="media_art_size">68dp</dimen>
     <dimen name="media_text_max_width">280dp</dimen>
+    <dimen name="sun_text">14sp</dimen>
+    <dimen name="news_card_width">240dp</dimen>
+    <dimen name="ha_chip_min_width">104dp</dimen>
+    <dimen name="ha_chip_max_width">200dp</dimen>
+    <dimen name="tonight_text">15sp</dimen>
 </resources>

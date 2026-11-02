@@ -234,7 +234,7 @@ class AskDialog(
         svc.copy(packageName = present)
     }
 
-    private fun openTitle(title: String) {
+    fun openTitle(title: String) {
         val available = installed()
         if (available.isEmpty()) {
             searchYouTube(title)

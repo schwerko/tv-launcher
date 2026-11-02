@@ -25,6 +25,11 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Screensaver: a full-screen slideshow of those photos with a clock and captions.
 > • Ask: press one button, speak or type a question, and get an answer from Google Gemini (free key) or Claude (paid key, with live web search). Titles the answer mentions open directly in Netflix, HBO Max, Apple TV, Disney+, Prime Video or YouTube.
 > • Cielo mini-split air-conditioner card: power, temperature, mode and fan, with the room's temperature and humidity.
+> • Now playing: what Spotify, YouTube or any app is playing, with play/pause and skip.
+> • Sunrise and sunset for your weather city.
+> • News headlines from feeds you choose (BBC, NPR, ESPN and more, or any RSS address), with summaries.
+> • What's on tonight: three daily picks written by the assistant, opening straight into your streaming apps.
+> • Home Assistant: your lights, switches, scenes and sensors as chips on the home screen, from your own server.
 >
 > BRING YOUR OWN KEYS
 > Weather, photos and the launcher itself need no account. The assistant, Unsplash and Cielo features use API keys you create with those services and type into Settings. Keys stay on the TV. The developer runs no server and collects nothing. See the privacy policy for exactly which service receives what.
@@ -78,14 +83,16 @@ Data types to declare (all **optional**, all **shared**, purpose **App functiona
 | App activity › Other user-generated content | The questions the user types or speaks in the Ask panel. | Google (Gemini), Anthropic |
 | Personal info › Other info | API keys the user enters (Gemini, Anthropic, Cielo, Unsplash); each is sent only to the service that issued it. | Google, Anthropic, Cielo, Unsplash |
 | App activity › Other actions | Air-conditioner commands (power, temperature, mode, fan). | Cielo |
+| Personal info › Other info | The Home Assistant access token the user created, sent only to the user's own Home Assistant server at the address they typed. | The user's own server |
+| App activity › Other actions | Home Assistant toggle / scene commands the user presses. | The user's own server |
 
-Not declared because it never leaves the device: the installed-app list, calendar events (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
+Not declared because it never leaves the device: the installed-app list, calendar events and news headlines (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. The "What's on tonight" card sends only the date and the weather city to the assistant (covered by the location row above). Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
 
 ### Government apps, financial features, health
 No to all.
 
 ### News
-No.
+No. (The headlines row shows feeds the user chooses, like a feed reader; the app is a launcher, not a news publisher. If a reviewer asks, that is the answer.)
 
 ### Content rating questionnaire
 Category "Utility, Productivity, Communication, or Other". Answer no to the violence, sexuality, language, controlled-substance and gambling questions; **yes** to "does the app let users communicate or share user-generated content with a third party" only if the questionnaire counts sending a question to an AI service — if unsure, answer yes and explain. Expected result: Everyone / PEGI 3.
