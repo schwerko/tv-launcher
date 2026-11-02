@@ -14,17 +14,16 @@ The code is public at https://github.com/schwerko/tv-launcher (MIT licence). The
 
 Developer account "Schwerko" is approved. The app exists in the console as **TV Launcher Azure** (`com.azura.tvlauncher`, paid). Console link: https://play.google.com/console/u/0/developers/8852856123804392108/app/4975636464627548772/app-dashboard
 
-## 4. Console set-up — 10 of 13 dashboard tasks done (1 Nov 2026)
+## 4. Console set-up — dashboard complete (1 Nov 2026)
 
-Done: store listing (descriptions, icon, feature graphic, 6 phone screenshots, TV banner, 6 TV screenshots), Android TV form factor added, privacy policy, ads, sign-in details, target audience (18+), data safety, advertising ID, government, financial, health, category (Tools), contact details (email azur.azapagic@gmail.com and the GitHub page, both shown publicly on Play), closed-testing track "Alpha" with the 1.1 (2) bundle uploaded as a draft release and all 178 countries selected.
+Done: store listing with all assets, Android TV form factor (opted in), every App content declaration including the IARC content rating, category Tools, contact details, payments profile, price USD 0.99 in 177 countries, closed-testing track "Alpha" with the 1.1 (2) bundle as a draft release and 173 countries (Rest of World, China, Cuba, Iran and Sudan are excluded: paid apps cannot be sold there).
 
-Still yours (each needs a click that accepts terms or your banking details):
+## 5. Left for you
 
-1. **Content rating**: App content → Content ratings → Start questionnaire → enter your email, pick **All Other App Types**, tick the IARC terms box, Next. Answers for the questions: no to violence, sexuality, language, drugs, gambling, user interaction/sharing of location, and in-app purchases; "yes" only if it asks whether users can communicate with third-party services (the AI assistant). Submit.
-2. **Android TV opt-in**: Test and release → Advanced settings → Form factors → Android TV → "Opt-in to Android TV and agree to the review policy" → Opt-in.
-3. **Merchant account**: Dashboard → "Create a merchant account" (bank account and tax details; Google pays out monthly). Then Monetize → App pricing → set USD 0.99 (Play's nearest price point to $1) and let it convert the other currencies.
-4. **Testers**: Closed testing → Alpha → Testers tab → create an email list with at least 12 Gmail addresses, save, and copy the opt-in link for them.
-5. **Send for review**: Publishing overview → "Send changes for review". The 14-day clock starts when the testers opt in.
+1. **Testers**: Closed testing → Alpha → Testers → Create email list: name it, paste 12 or more Gmail addresses (comma-separated), Save. Then tick the list and Save the Testers tab. Copy the opt-in link it shows and send it to the testers.
+2. **Send for review**: Publishing overview → "Send app for review". Play review usually takes a few days for a first submission.
+3. **Testers must opt in and stay opted in for 14 days** before you can apply for production access (Dashboard → "Apply for access to production").
+4. **15% service fee**: the console notification "It's time to enroll for the 15% service fee" is Google's reduced-fee tier for the first USD 1M a year. Enrol under Manage account → Monetization setup; it halves Google's cut.
 
 ## 6. Before each later upload
 
