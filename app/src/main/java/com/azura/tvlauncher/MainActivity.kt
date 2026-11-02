@@ -408,7 +408,7 @@ class MainActivity : Activity() {
                     if (it.length > 40) it.take(39) + "…" else it
                 }) to { showTonightInterests() },
             getString(R.string.setting_theme, getString(if (isDark) R.string.theme_dark else R.string.theme_photo)) to { showThemeChooser() },
-            getString(R.string.setting_background, if (isDark) getString(R.string.background_dark_theme) else background) to { showBackgroundChooser() },
+            getString(R.string.setting_background, background) to { showBackgroundChooser() },
             getString(R.string.setting_assistant, if (prefs.assistant == "gemini") "Gemini (free)" else "Claude") to {
                 val choices = arrayOf(getString(R.string.assistant_gemini), getString(R.string.assistant_claude))
                 dialog().setTitle(R.string.setting_assistant_title).setItems(choices) { _, which ->
@@ -778,8 +778,7 @@ class MainActivity : Activity() {
     // ---- background slideshow -------------------------------------------------------------
 
     private fun refreshWallpaper(force: Boolean) {
-        // The dark theme always uses a plain black background; the photo setting is kept for later.
-        val source = if (isDark) WallpaperService.NONE else prefs.wallpaper
+        val source = prefs.wallpaper
         handler.removeCallbacks(slide)
         if (source.isBlank()) {
             wallpaperPhotos = emptyList()
@@ -836,8 +835,12 @@ class MainActivity : Activity() {
     }
 
     private fun showBackground(bitmap: Bitmap) {
+        val photo = BitmapDrawable(resources, bitmap).apply {
+            // The Dark theme shows the same photos in black and white.
+            if (isDark) colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix().apply { setSaturation(0f) })
+        }
         val next = LayerDrawable(arrayOf(
-            BitmapDrawable(resources, bitmap),
+            photo,
             ContextCompat.getDrawable(this, R.drawable.scrim)!!,
         ))
         val previous = currentBackground

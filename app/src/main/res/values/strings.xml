@@ -150,6 +150,5 @@
     <string name="setting_theme">Theme: %1$s</string>
     <string name="theme_title">Theme</string>
     <string name="theme_photo">Photo (background photos, blue)</string>
-    <string name="theme_dark">Dark (black, grey and white)</string>
-    <string name="background_dark_theme">Plain black (Dark theme)</string>
+    <string name="theme_dark">Dark (black-and-white photos, grey cards)</string>
 </resources>

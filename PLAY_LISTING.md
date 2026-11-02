@@ -22,7 +22,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Weather from Open-Meteo for any city you type (starts with the city of your time zone).
 > • Calendar cards: paste the private ICS link of a Google, Outlook or iCloud calendar and see the next 7 days in a row you scroll through; press a card for the details. Several feeds are merged.
 > • Background photos: Wikimedia Commons' picture of the day, your own Unsplash key, or your own image URLs. Plain dark if you prefer.
-> • Two themes: Photo (background photos, glass cards) or Dark (black, grey and white).
+> • Two themes: Photo (colour background photos, glass cards) or Dark (the same photos in black and white, grey cards).
 > • Screensaver: a full-screen slideshow of those photos with a clock and captions.
 > • Ask: press one button, speak or type a question, and get an answer from Google Gemini (free key) or Claude (paid key, with live web search). Titles the answer mentions open directly in Netflix, HBO Max, Apple TV, Disney+, Prime Video or YouTube.
 > • Cielo mini-split air-conditioner card: power, temperature, mode and fan, with the room's temperature and humidity.

@@ -103,11 +103,11 @@ recommendations, no accounts.
   LAN address, only while that screen is open, and saving needs the code (five wrong codes
   close it). Nothing goes through the internet.
 - Refreshes automatically when apps are installed or removed.
-- Themes (Settings › Theme): "Photo", the original look with background photos, glass cards and
-  a blue accent; and "Dark", a plain black background with grey cards, white text and white
-  focus rings (the weather symbol is drawn in grey too). App banners, album art and the
-  screensaver keep their colours. Dark ignores the background setting without changing it, so
-  switching back restores the photos.
+- Themes (Settings › Theme): "Photo", the original look with background photos in colour, glass
+  cards and a blue accent; and "Dark", the same background photos in black and white (plain black
+  when the background is set to plain), grey glass cards, white text and white focus rings (the
+  weather symbol is drawn in grey too). App banners, album art and the screensaver keep their
+  colours.
 - The header (clock, air conditioner, weather, Ask, Settings) stays fixed; the rows under it
   (Tonight, Home Assistant, calendar, news, the app grid) scroll beneath it as D-pad focus
   moves, and jump back to the top when focus returns to the header.
@@ -254,7 +254,7 @@ Focus the **Settings** button at the top right and press OK:
 - What's on tonight card: on or off (needs a Gemini or Claude key).
 - Theme: Photo or Dark.
 - Background: plain dark, daily photos from Wikimedia Commons, Unsplash (asks for your access
-  key), or your own image URLs (the Dark theme always uses plain black).
+  key), or your own image URLs (shown in black and white with the Dark theme).
 - Ask uses / Gemini key / Claude key: pick the model and paste its key.
 - Cielo AC: paste the API key (changing it forgets the old token and unit).
 - Set up from your phone…: the QR-code page for pasting links and keys from a phone.
