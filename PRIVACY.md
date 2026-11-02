@@ -16,8 +16,8 @@ Each feature below is optional. Nothing is sent until you set it up, except the 
 |---|---|---|---|
 | Weather, sunrise and sunset | Open-Meteo (`api.open-meteo.com`, `geocoding-api.open-meteo.com`) | The city name you typed, or, if you typed none, the city of the TV's time zone (for example "Phoenix"). No IP-based or GPS location is used. | https://open-meteo.com/en/terms |
 | Calendar cards | The host of each calendar (ICS) address you pasted, e.g. Google Calendar or Outlook | A request for that address. The events it returns are read on the TV and go nowhere else. | Your calendar provider's policy |
-| News headlines | The publisher of each RSS/Atom feed you ticked or pasted (e.g. `feeds.bbci.co.uk`, `feeds.npr.org`) | A request for the feed. "Open article" hands the article's address to the device's browser. | That publisher's policy |
-| What's on tonight | The assistant you chose for Ask (Google Gemini or Anthropic Claude, as below) | Once a day: today's date and the weather city, asking for three viewing suggestions. | As for Ask |
+| News | The publisher of each RSS/Atom feed you ticked or pasted (e.g. `feeds.bbci.co.uk`, `feeds.npr.org`), or YouTube (`www.youtube.com`, `i.ytimg.com`) for a channel you added | A request for the feed (and thumbnails for a YouTube channel). Pressing a headline hands the headline text to the YouTube app as a search; pressing a video hands its id to the YouTube app. | That publisher's policy; https://policies.google.com/privacy |
+| What's on tonight | The assistant you chose for Ask (Google Gemini or Anthropic Claude, as below) | Once a day: today's date, the weather city and the interests you ticked (e.g. "Sports, Comedy"), asking for three viewing suggestions. | As for Ask |
 | Home Assistant row | Your own Home Assistant server, at the address you typed (usually on your home network) | The access token you created there, requests for entity states, and the toggle/run commands you press. The developer has no access to it. | Your own server |
 | Cielo air-conditioner card | Cielo Connect API (`api.smartcielo.com`) | The Cielo API key you entered, the access token Cielo issues for it, and the commands you press (power, temperature, mode, fan). | https://www.cielowigle.com/privacy-policy |
 | Ask (Gemini) | Google Generative Language API (`generativelanguage.googleapis.com`) | Your Gemini API key and the question you typed or spoke, plus the weather city as context. | https://policies.google.com/privacy |
@@ -40,7 +40,8 @@ Stored in the app's private storage, readable only by the app:
 - calendar feed addresses and news feed addresses;
 - API keys for Gemini, Anthropic, Cielo and Unsplash, and the Cielo access token;
 - the Home Assistant address, access token and chosen entities;
-- the day's "What's on tonight" lines;
+- the day's "What's on tonight" lines and the interests you ticked;
+- a cache of news thumbnails and the last headlines of each source;
 - which apps you hid or pinned, and the last air-conditioner unit shown;
 - a cache of downloaded background images.
 

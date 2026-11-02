@@ -3,20 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-<!-- The page scrolls vertically once the optional rows push the grid down. -->
-<ScrollView
-    android:id="@+id/page"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:fillViewport="true"
-    android:overScrollMode="never"
-    android:scrollbars="none">
-
+<!-- The header (clock, AC, weather, buttons) stays put; everything under it scrolls. -->
 <LinearLayout
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:clipChildren="false"
     android:clipToPadding="false"
@@ -129,6 +119,30 @@
             android:textColor="@color/text_primary" />
     </LinearLayout>
 
+    <!-- This frame clips (default) so scrolled rows disappear under the header above. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp">
+
+    <ScrollView
+        android:id="@+id/page"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
     <!-- Narrow screens (under 480dp wide): the air-conditioner card gets its own row. -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -240,8 +254,10 @@
         android:paddingTop="8dp"
         android:nextFocusUp="@id/settingsButton"
         android:descendantFocusability="afterDescendants" />
+    </LinearLayout>
+    </ScrollView>
+    </FrameLayout>
 </LinearLayout>
-</ScrollView>
 
     <!-- Credit for the current background photo (author, licence, source). -->
     <TextView

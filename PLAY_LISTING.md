@@ -27,8 +27,8 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Cielo mini-split air-conditioner card: power, temperature, mode and fan, with the room's temperature and humidity.
 > • Now playing: what Spotify, YouTube or any app is playing, with play/pause and skip.
 > • Sunrise and sunset for your weather city.
-> • News headlines from feeds you choose (BBC, NPR, ESPN and more, or any RSS address), with summaries.
-> • What's on tonight: three daily picks written by the assistant, opening straight into your streaming apps.
+> • News you watch, not read: headlines from sources you choose (BBC, NPR, ESPN and more, or any RSS address); press one and YouTube plays the coverage.
+> • What's on tonight: three daily picks written by the assistant around the interests you tick, opening straight into your streaming apps.
 > • Home Assistant: your lights, switches, scenes and sensors as chips on the home screen, from your own server.
 >
 > BRING YOUR OWN KEYS
@@ -86,7 +86,7 @@ Data types to declare (all **optional**, all **shared**, purpose **App functiona
 | Personal info › Other info | The Home Assistant access token the user created, sent only to the user's own Home Assistant server at the address they typed. | The user's own server |
 | App activity › Other actions | Home Assistant toggle / scene commands the user presses. | The user's own server |
 
-Not declared because it never leaves the device: the installed-app list, calendar events and news headlines (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. The "What's on tonight" card sends only the date and the weather city to the assistant (covered by the location row above). Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
+Not declared because it never leaves the device: the installed-app list, calendar events and news headlines (downloaded, not uploaded), hidden/pinned apps, the °C/°F choice. The "What's on tonight" card sends only the date, the weather city and the ticked interests (e.g. "Sports") to the assistant (covered by the location and user-generated-content rows above). A pressed headline is handed to the YouTube app on the device as a search, not sent by this app. Audio is not declared: the app receives text from the system speech recogniser and never records or stores audio itself (say so in the "Voice or sound recordings" question if the reviewer asks).
 
 ### Government apps, financial features, health
 No to all.

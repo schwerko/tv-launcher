@@ -100,6 +100,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("tonight_enabled", true)
         set(value) = sp.edit().putBoolean("tonight_enabled", value).apply()
 
+    /** Kinds of things the viewer likes, folded into the "What's on tonight" question. */
+    var tonightInterests: List<String>
+        get() = (sp.getString("tonight_interests", "") ?: "").split('|').map { it.trim() }.filter { it.isNotBlank() }
+        set(value) = sp.edit().putString("tonight_interests", value.joinToString("|")).apply()
+
     /** The "What's on tonight" lines, cached for the day they were written. */
     var tonightDate: String
         get() = sp.getString("tonight_date", "") ?: ""

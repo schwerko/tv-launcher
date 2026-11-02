@@ -201,6 +201,14 @@ class MainActivity : Activity() {
             }
         }
 
+        // The header stays fixed; when focus returns to it, bring the rows back to the top.
+        val page = findViewById<View>(R.id.page)
+        window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
+            var v: View? = now
+            while (v != null && v !== page) v = v.parent as? View
+            if (now != null && v == null) (page as android.widget.ScrollView).smoothScrollTo(0, 0)
+        }
+
         loadApps()
         showFirstRunHint()
     }
@@ -380,6 +388,10 @@ class MainActivity : Activity() {
                 prefs.tonightEnabled = !prefs.tonightEnabled
                 refreshTonight(force = false)
             },
+            getString(R.string.setting_tonight_interests,
+                prefs.tonightInterests.ifEmpty { listOf(getString(R.string.tonight_interests_any)) }.joinToString(", ").let {
+                    if (it.length > 40) it.take(39) + "…" else it
+                }) to { showTonightInterests() },
             getString(R.string.setting_background, background) to { showBackgroundChooser() },
             getString(R.string.setting_assistant, if (prefs.assistant == "gemini") "Gemini (free)" else "Claude") to {
                 val choices = arrayOf(getString(R.string.assistant_gemini), getString(R.string.assistant_claude))
@@ -910,7 +922,7 @@ class MainActivity : Activity() {
         if (!force && now - lastNewsAt < NEWS_REFRESH_MS) return
         lastNewsAt = now
         scope.launch {
-            val items = NewsService.fetch(urls, MAX_NEWS_CARDS)
+            val items = NewsService.fetch(this@MainActivity, urls, MAX_NEWS_CARDS)
             if (items == null) {
                 if (newsRow.childCount == 0) Toast.makeText(this@MainActivity, R.string.news_error, Toast.LENGTH_SHORT).show()
                 return@launch
@@ -923,20 +935,51 @@ class MainActivity : Activity() {
         val inflater = LayoutInflater.from(this)
         val hadFocus = currentFocus?.let { newsRow.indexOfChild(it) } ?: -1
         newsRow.removeAllViews()
+        val thumbW = resources.getDimensionPixelSize(R.dimen.news_card_width)
+        val thumbH = resources.getDimensionPixelSize(R.dimen.news_thumb_height)
         for (item in items) {
             val card = inflater.inflate(R.layout.item_news, newsRow, false)
             card.findViewById<TextView>(R.id.newsSource).text = item.source
-            card.findViewById<TextView>(R.id.newsTitle).text = item.title
+            card.findViewById<TextView>(R.id.newsTitle).text =
+                if (item.channelOnly) getString(R.string.news_channel_latest) else item.title
             card.findViewById<TextView>(R.id.newsAge).text = ageLabel(item.published)
+            val thumb = card.findViewById<ImageView>(R.id.newsThumb)
+            thumb.setImageDrawable(null)
+            thumb.visibility = if (item.thumbnailUrl.isBlank()) View.GONE else View.VISIBLE
+            if (item.thumbnailUrl.isNotBlank()) {
+                scope.launch {
+                    val bmp = WallpaperService.load(this@MainActivity, WorldPhotos.Photo(item.thumbnailUrl, "", "", ""), thumbW, thumbH, "news")
+                    if (bmp != null && card.parent === newsRow) thumb.setImageBitmap(bmp)
+                }
+            }
             card.setOnFocusChangeListener { v, focused ->
                 val scale = if (focused) 1.06f else 1f
                 v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
             }
-            card.setOnClickListener { showNewsDetails(item) }
+            card.setOnClickListener { openNews(item) }
             newsRow.addView(card)
         }
         newsScroll.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
         if (hadFocus in 0 until newsRow.childCount) newsRow.getChildAt(hadFocus).requestFocus()
+        scope.launch(Dispatchers.IO) { WallpaperService.prune(this@MainActivity, items.map { it.thumbnailUrl }, "news") }
+    }
+
+    /** Videos play in YouTube; a channel card opens the channel; anything else becomes a YouTube search. */
+    private fun openNews(item: NewsService.Item) {
+        val url = when {
+            item.videoId.isNotBlank() -> "https://www.youtube.com/watch?v=${item.videoId}"
+            item.channelOnly -> item.link
+            // YouTube's TV app shows '+' literally, so spaces go as %20.
+            else -> "https://www.youtube.com/results?search_query=" +
+                java.net.URLEncoder.encode(item.title, "UTF-8").replace("+", "%20")
+        }
+        val youtube = listOf("com.google.android.youtube.tv", "com.google.android.youtube")
+            .firstOrNull { runCatching { packageManager.getPackageInfo(it, 0) }.isSuccess }
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply { if (youtube != null) setPackage(youtube) }
+        runCatching { startActivity(intent) }.onFailure {
+            runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                .onFailure { Toast.makeText(this, R.string.news_no_youtube, Toast.LENGTH_SHORT).show() }
+        }
     }
 
     private fun ageLabel(published: Long): String {
@@ -948,22 +991,6 @@ class MainActivity : Activity() {
             minutes < 24 * 60 -> getString(R.string.news_hours_ago, (minutes / 60).toInt())
             else -> getString(R.string.news_days_ago, (minutes / (24 * 60)).toInt())
         }
-    }
-
-    private fun showNewsDetails(item: NewsService.Item) {
-        val meta = listOf(item.source, ageLabel(item.published)).filter { it.isNotBlank() }.joinToString(" · ")
-        val body = buildString {
-            append(meta)
-            if (item.summary.isNotBlank() && item.summary != item.title) append("\n\n").append(item.summary)
-        }
-        val b = dialog().setTitle(item.title).setMessage(body).setNegativeButton(android.R.string.ok, null)
-        if (item.link.startsWith("http")) {
-            b.setPositiveButton(R.string.news_open) { _, _ ->
-                runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.link))) }
-                    .onFailure { Toast.makeText(this, R.string.ask_no_app, Toast.LENGTH_SHORT).show() }
-            }
-        }
-        b.show()
     }
 
     /** Tick the well-known feeds, or type other URLs. */
@@ -982,9 +1009,11 @@ class MainActivity : Activity() {
             }
             .setNeutralButton(R.string.news_custom) { _, _ ->
                 val custom = current.filter { url -> presets.none { it.url == url } }.joinToString(" ")
-                promptText(getString(R.string.news_custom_prompt), custom, "https://example.com/feed.xml") { typed ->
+                val shown = custom.split(' ').filter { it.isNotBlank() }
+                    .joinToString(" ") { NewsService.channelIdOf(it) ?: it }
+                promptText(getString(R.string.news_custom_prompt), shown, "https://example.com/feed.xml") { typed ->
                     val keep = current.filter { url -> presets.any { it.url == url } }
-                    prefs.newsUrls = (keep + typed.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }).joinToString(" ")
+                    prefs.newsUrls = (keep + NewsService.normalise(typed)).joinToString(" ")
                     refreshNews(force = true)
                 }
             }
@@ -1011,12 +1040,16 @@ class MainActivity : Activity() {
         tonightBusy = true
         if (prefs.tonightText.isBlank()) renderTonight(getString(R.string.tonight_loading, client.name))
         val date = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale.getDefault()))
-        val question = "It is $date. What is worth watching tonight? Answer with exactly three lines and nothing " +
+        val interests = prefs.tonightInterests
+        val taste = if (interests.isEmpty()) "" else
+            " The viewer likes: ${interests.joinToString(", ")}. Choose picks that fit those interests" +
+            (if ("Sports" in interests) "." else "; skip live sport unless it is a major event.")
+        val question = "It is $date. What is worth watching tonight?$taste Answer with exactly three lines and nothing " +
             "else, each at most fourteen words, in this order: a live sport, game or TV event on tonight with its " +
             "channel or service and local start time; a new or much talked-about series or film on a streaming " +
-            "service; a great film for a rewatch. If you cannot be sure of tonight's live schedule, make the first " +
-            "line another streaming pick instead of guessing. Write each line as the title, a colon, then why. " +
-            "No numbering, no introduction."
+            "service; a great film for a rewatch. If you cannot be sure of tonight's live schedule, or live events " +
+            "don't fit the viewer's interests, make the first line another streaming pick instead of guessing. " +
+            "Write each line as the title, a colon, then why. No numbering, no introduction."
         scope.launch {
             try {
                 val a = client.ask(question)
@@ -1037,6 +1070,26 @@ class MainActivity : Activity() {
                 tonightBusy = false
             }
         }
+    }
+
+    private fun showTonightInterests() {
+        val all = resources.getStringArray(R.array.tonight_interests)
+        val chosen = prefs.tonightInterests.toMutableList()
+        val checked = BooleanArray(all.size) { all[it] in chosen }
+        dialog().setTitle(R.string.tonight_interests_title)
+            .setMultiChoiceItems(all, checked) { _, which, isChecked ->
+                if (isChecked) { if (all[which] !in chosen) chosen.add(all[which]) } else chosen.remove(all[which])
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val ordered = all.filter { it in chosen }
+                if (ordered != prefs.tonightInterests) {
+                    prefs.tonightInterests = ordered
+                    prefs.tonightDate = ""
+                    refreshTonight(force = true)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun renderTonight(text: String) {

@@ -54,17 +54,22 @@ recommendations, no accounts.
   adb shell cmd notification allow_listener com.azura.tvlauncher/.MediaListener
   ```
 
-- News headlines: Settings › "News headlines" offers a few well-known feeds (BBC, NPR, The
-  Guardian, The New York Times, Al Jazeera, ESPN, Ars Technica) to tick, or any RSS/Atom URLs
-  you paste. Headlines from all chosen feeds, newest first, fill a row that scrolls sideways;
-  press one for the summary and an "Open article" button (needs a browser on the device).
-  Refreshes every 30 minutes; each feed is fetched straight from its publisher.
+- News, watched rather than read: Settings › "News (opens in YouTube)" offers a few
+  well-known sources (BBC, NPR, The Guardian, The New York Times, Al Jazeera, ESPN, Ars
+  Technica) to tick, or any RSS/Atom URL. Their headlines fill a row that scrolls sideways;
+  pressing one opens a YouTube search for that story, so the TV plays the coverage instead
+  of showing an article. A YouTube channel link works as a source too (its latest videos
+  appear with thumbnails and play directly), but YouTube's channel feeds answer only
+  intermittently, so the last good result is cached and a channel with nothing cached gets
+  a single card that opens the channel. Refreshes every 30 minutes.
 - What's on tonight: once a day the Ask assistant (whichever of Gemini or Claude is configured)
   writes three short lines, one live event or game, one new streaming pick and one classic,
   shown on a "Tonight" card. Press it for the full lines, "▶" buttons that open the titles in
   your streaming apps, "Ask again" and "Ask more". With Gemini (no live web) the first line is
   a best guess from memory; with Claude it comes from a web search. Turn the card off under
-  Settings › "What's on tonight card". Costs one assistant question per day.
+  Settings › "What's on tonight card". Settings › "Tonight interests" is a checklist (sports,
+  films, series, documentaries, comedy, science fiction, …) folded into the daily question so
+  the picks match your taste; changing it asks again. Costs one assistant question per day.
 - Home Assistant: a row of chips for lights, switches, fans, covers, scenes, scripts and sensors
   from your own Home Assistant server. Settings › Home Assistant asks for the server address
   (e.g. `http://homeassistant.local:8123`), a long-lived access token (Home Assistant › your
@@ -90,8 +95,9 @@ recommendations, no accounts.
   launcher asks the model for the title's own page and opens that (Claude looks it up on the
   web; Gemini answers from memory and may miss); if nothing is found it opens the app's search.
 - Refreshes automatically when apps are installed or removed.
-- The page scrolls vertically when the optional rows (Tonight, Home Assistant, calendar, news)
-  push the app grid down; D-pad focus scrolls it.
+- The header (clock, air conditioner, weather, Ask, Settings) stays fixed; the rows under it
+  (Tonight, Home Assistant, calendar, news, the app grid) scroll beneath it as D-pad focus
+  moves, and jump back to the top when focus returns to the header.
 
 ## Build
 
@@ -229,7 +235,8 @@ Focus the **Settings** button at the top right and press OK:
 - Temperature unit: toggles °C / °F.
 - Calendar feed: paste your ICS URL (typing on a TV is slow; pasting works if your remote app
   supports it, or send text with `adb shell input text '...'` while the field is focused).
-- News headlines: tick well-known feeds or paste RSS/Atom URLs.
+- News (opens in YouTube): tick well-known sources or paste RSS/Atom URLs or YouTube channel links.
+- Tonight interests: what you like to watch, for the daily picks.
 - Home Assistant: server address, access token, and which entities to show.
 - What's on tonight card: on or off (needs a Gemini or Claude key).
 - Background: plain dark, daily photos from Wikimedia Commons, Unsplash (asks for your access

@@ -1,19 +1,29 @@
 package com.azura.tvlauncher
 
+import android.content.Context
 import android.text.Html
 import android.util.Log
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
+import java.io.File
 import java.io.StringReader
+import java.security.MessageDigest
 import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Headlines from RSS 2.0 and Atom feeds the user chose. Each feed is fetched directly from its
- * publisher; nothing is sent beyond the request itself.
+ * News for a TV: headlines from RSS/Atom feeds the user chose, each of which opens a YouTube
+ * search for that story (nobody reads articles on a TV). A YouTube channel link or id works as a
+ * source too: YouTube publishes an Atom feed per channel, whose entries are videos shown with a
+ * thumbnail and played directly. That endpoint answers intermittently, so the last good result
+ * of every feed is kept on disk and reused when a fetch fails; a channel with nothing cached
+ * gets one card that opens the channel itself. Each feed is fetched directly from its host;
+ * nothing is sent beyond the request itself.
  */
 object NewsService {
 
@@ -24,15 +34,21 @@ object NewsService {
         val source: String,
         /** Epoch millis, or 0 when the feed gave no usable date. */
         val published: Long,
-    )
+        /** YouTube video id when the item is a video, else blank. */
+        val videoId: String = "",
+        /** True for the stand-in card shown when a channel's feed is unavailable. */
+        val channelOnly: Boolean = false,
+    ) {
+        val thumbnailUrl: String get() = if (videoId.isBlank()) "" else "https://i.ytimg.com/vi/$videoId/mqdefault.jpg"
+    }
 
-    /** A few well-known feeds offered in Settings so nothing has to be typed on a remote. */
+    /** Well-known sources offered in Settings so nothing has to be typed on a remote. */
     data class Preset(val label: String, val url: String)
 
     val PRESETS = listOf(
-        Preset("BBC News · World", "https://feeds.bbci.co.uk/news/world/rss.xml"),
-        Preset("NPR News", "https://feeds.npr.org/1001/rss.xml"),
-        Preset("The Guardian · World", "https://www.theguardian.com/world/rss"),
+        Preset("BBC News", "https://feeds.bbci.co.uk/news/world/rss.xml"),
+        Preset("NPR", "https://feeds.npr.org/1001/rss.xml"),
+        Preset("The Guardian", "https://www.theguardian.com/world/rss"),
         Preset("The New York Times", "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
         Preset("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
         Preset("ESPN", "https://www.espn.com/espn/rss/news"),
@@ -40,24 +56,69 @@ object NewsService {
     )
 
     private const val TAG = "News"
-    private const val PER_FEED = 15
+    private const val PER_FEED = 12
+    private val CHANNEL_ID = Regex("(UC[A-Za-z0-9_-]{22})")
 
-    /** Newest first across all feeds; null when every feed failed. */
-    suspend fun fetch(urls: List<String>, max: Int): List<Item>? = withContext(Dispatchers.IO) {
-        val results = urls.map { url ->
-            runCatching {
-                val items = parse(Net.get(url)).take(PER_FEED)
-                // Feeds' own channel titles can be clumsy ("www.espn.com - TOP"); prefer the preset's name.
-                val preset = PRESETS.firstOrNull { it.url == url }?.label
-                if (preset == null) items else items.map { it.copy(source = preset) }
-            }.onFailure { Log.w(TAG, "feed failed: $url", it) }
+    fun feedUrl(channelId: String) = "https://www.youtube.com/feeds/videos.xml?channel_id=$channelId"
+
+    /** The YouTube channel id in a feed URL, channel URL or bare id; null for other feeds. */
+    fun channelIdOf(text: String): String? = CHANNEL_ID.find(text)?.groupValues?.get(1)
+
+    /** Turns whatever the user typed (channel ids, channel URLs, feed URLs) into feed URLs. */
+    fun normalise(typed: String): List<String> =
+        typed.split(Regex("[\\s,;]+")).filter { it.isNotBlank() }.map { t ->
+            val id = channelIdOf(t)
+            if (id != null) feedUrl(id) else t
         }
-        if (results.none { it.isSuccess }) return@withContext null
-        val all = results.mapNotNull { it.getOrNull() }.flatten()
+
+    /** Newest first across all feeds; null when every feed failed and nothing is cached. */
+    suspend fun fetch(context: Context, urls: List<String>, max: Int): List<Item>? = withContext(Dispatchers.IO) {
+        val dir = File(context.cacheDir, "news").apply { mkdirs() }
+        val results = urls.map { url ->
+            val cache = File(dir, sha1(url) + ".json")
+            val fresh = runCatching { parse(Net.get(url)).take(PER_FEED) }
+                .onFailure { Log.w(TAG, "feed failed: $url: ${it.message}") }.getOrNull()
+            val items = when {
+                fresh != null && fresh.isNotEmpty() -> fresh.also { writeCache(cache, it) }
+                else -> readCache(cache)
+            }
+            val label = PRESETS.firstOrNull { it.url == url }?.label
+            when {
+                items.isNotEmpty() -> items.map { if (label != null) it.copy(source = label) else it }
+                else -> channelIdOf(url)?.let { id ->
+                    // Feed unavailable and nothing cached: one card that opens the channel itself.
+                    listOf(Item(label ?: "YouTube channel", "https://www.youtube.com/channel/$id/videos", "", label ?: "", 0, "", true))
+                } ?: emptyList()
+            }
+        }
+        val all = results.flatten()
+        if (all.isEmpty()) return@withContext null
         // Dated items newest first; undated ones keep their feed order after them.
         all.withIndex().sortedWith(compareByDescending<IndexedValue<Item>> { it.value.published }.thenBy { it.index })
             .map { it.value }.distinctBy { it.title }.take(max)
     }
+
+    private fun sha1(s: String): String =
+        MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
+
+    private fun readCache(file: File): List<Item> = runCatching {
+        if (!file.exists()) return emptyList()
+        val arr = JSONArray(file.readText())
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            Item(o.getString("title"), o.optString("link"), o.optString("summary"), o.optString("source"),
+                o.optLong("published"), o.optString("videoId"))
+        }
+    }.getOrDefault(emptyList())
+
+    private fun writeCache(file: File, items: List<Item>) = runCatching {
+        val arr = JSONArray()
+        items.forEach {
+            arr.put(JSONObject().put("title", it.title).put("link", it.link).put("summary", it.summary)
+                .put("source", it.source).put("published", it.published).put("videoId", it.videoId))
+        }
+        file.writeText(arr.toString())
+    }.onFailure { Log.w(TAG, "cache write failed", it) }
 
     fun parse(xml: String): List<Item> {
         val parser = Xml.newPullParser().apply {
@@ -67,7 +128,7 @@ object NewsService {
         val items = ArrayList<Item>()
         var feedTitle = ""
         var inEntry = false
-        var title = ""; var link = ""; var summary = ""; var date = ""; var content = ""
+        var title = ""; var link = ""; var summary = ""; var date = ""; var content = ""; var videoId = ""
         var depthOfEntry = 0
         var event = parser.eventType
         while (event != XmlPullParser.END_DOCUMENT) {
@@ -77,7 +138,7 @@ object NewsService {
                     when {
                         !inEntry && (name == "item" || name == "entry") -> {
                             inEntry = true; depthOfEntry = parser.depth
-                            title = ""; link = ""; summary = ""; date = ""; content = ""
+                            title = ""; link = ""; summary = ""; date = ""; content = ""; videoId = ""
                         }
                         !inEntry && name == "title" && feedTitle.isBlank() && parser.depth <= 3 -> feedTitle = text(parser)
                         inEntry && parser.depth == depthOfEntry + 1 -> when (name) {
@@ -91,7 +152,11 @@ object NewsService {
                             "description", "summary" -> summary = text(parser)
                             "encoded", "content" -> content = text(parser)
                             "pubDate", "published", "updated", "date" -> if (date.isBlank()) date = text(parser)
+                            "videoId" -> videoId = text(parser)
                         }
+                        // YouTube puts the description one level down, in <media:group>.
+                        inEntry && parser.depth == depthOfEntry + 2 && name == "description" && summary.isBlank() ->
+                            summary = text(parser)
                     }
                 }
                 XmlPullParser.END_TAG -> {
@@ -100,7 +165,7 @@ object NewsService {
                         inEntry = false
                         val t = plain(title)
                         if (t.isNotBlank()) {
-                            items.add(Item(t, link, plain(summary.ifBlank { content }).take(1200), plain(feedTitle), parseDate(date)))
+                            items.add(Item(t, link, plain(summary.ifBlank { content }).take(1200), plain(feedTitle), parseDate(date), videoId))
                         }
                     }
                 }

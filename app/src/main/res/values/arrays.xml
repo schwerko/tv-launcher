@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Interests folded into the daily "What's on tonight" question. -->
+    <string-array name="tonight_interests">
+        <item>Sports</item>
+        <item>Films</item>
+        <item>Series</item>
+        <item>Documentaries</item>
+        <item>Comedy</item>
+        <item>Drama</item>
+        <item>Action and thrillers</item>
+        <item>Science fiction and fantasy</item>
+        <item>Crime and mystery</item>
+        <item>Horror</item>
+        <item>Family and kids</item>
+        <item>Classic films</item>
+        <item>Music and concerts</item>
+        <item>Reality and talk shows</item>
+        <item>News and politics</item>
+        <item>Anime</item>
+    </string-array>
+</resources>

@@ -23,4 +23,5 @@
     <dimen name="ha_chip_min_width">104dp</dimen>
     <dimen name="ha_chip_max_width">200dp</dimen>
     <dimen name="tonight_text">15sp</dimen>
+    <dimen name="news_thumb_height">135dp</dimen>
 </resources>
