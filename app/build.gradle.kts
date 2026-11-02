@@ -25,8 +25,8 @@ android {
         applicationId = "com.azura.tvlauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.3.1"
+        versionCode = 12
+        versionName = "1.3.2"
 
         // Phones and tablets are supported too (the launcher works as a kiosk-style home screen
         // there), so Android TV is optional by default. `-PtvOnly=true` builds a TV-only bundle.

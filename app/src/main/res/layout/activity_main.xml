@@ -10,15 +10,19 @@
     android:orientation="vertical"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:paddingStart="@dimen/screen_padding_h"
-    android:paddingEnd="@dimen/screen_padding_h"
     android:paddingTop="@dimen/screen_padding_v"
     android:paddingBottom="0dp">
 
+    <!-- Side padding lives on the header and on the scrolled content (not on this parent), so the
+         clipping frame below spans the full width and scaled-up cards at the edges are not cut. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:gravity="top">
 
         <LinearLayout
@@ -148,6 +152,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="horizontal">
 
         <include layout="@layout/ac_card" />
@@ -158,6 +166,8 @@
     <include layout="@layout/tonight_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_padding_h"
+        android:layout_marginEnd="@dimen/screen_padding_h"
         android:layout_marginTop="10dp" />
 
     <!-- Home Assistant entities chosen in Settings; chips toggle lights, switches, scenes. -->
@@ -165,6 +175,8 @@
         android:id="@+id/haScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:layout_marginTop="12dp"
         android:clipChildren="false"
         android:clipToPadding="false"
@@ -186,6 +198,8 @@
         android:id="@+id/agendaScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:layout_marginTop="16dp"
         android:clipChildren="false"
         android:clipToPadding="false"
@@ -206,6 +220,8 @@
         android:id="@+id/agendaStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:layout_marginTop="16dp"
         android:textSize="16sp"
         android:textColor="@color/text_secondary"
@@ -216,6 +232,8 @@
         android:id="@+id/newsScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:layout_marginTop="12dp"
         android:clipChildren="false"
         android:clipToPadding="false"
@@ -239,6 +257,8 @@
         android:layout_marginTop="20dp"
         android:layout_marginBottom="8dp"
         android:text="@string/all_apps"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:textSize="15sp"
         android:textColor="@color/text_secondary"
         android:textAllCaps="true"
@@ -249,6 +269,8 @@
         android:clipChildren="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
         android:clipToPadding="false"
         android:paddingBottom="@dimen/screen_padding_v"
         android:paddingTop="8dp"
