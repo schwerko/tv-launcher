@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:textSize="@dimen/clock_text"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/tlTextPrimary"
                 android:fontFamily="sans-serif-light"
                 android:includeFontPadding="false" />
 
@@ -47,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:textSize="@dimen/date_text"
-                android:textColor="@color/text_secondary" />
+                android:textColor="?attr/tlTextSecondary" />
         </LinearLayout>
 
         <LinearLayout
@@ -62,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/weather_temp_text"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/tlTextPrimary"
                 android:fontFamily="sans-serif-light"
                 android:includeFontPadding="false" />
 
@@ -74,7 +74,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:textSize="@dimen/weather_desc_text"
-                android:textColor="@color/text_secondary" />
+                android:textColor="?attr/tlTextSecondary" />
 
             <TextView
                 android:id="@+id/sunTimes"
@@ -83,7 +83,7 @@
                 android:layout_marginTop="2dp"
                 android:maxLines="1"
                 android:textSize="@dimen/sun_text"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/tlTextSecondary"
                 android:visibility="gone" />
         </LinearLayout>
 
@@ -103,7 +103,7 @@
             android:clickable="true"
             android:text="@string/ask"
             android:textSize="@dimen/header_button_text"
-            android:textColor="@color/text_primary" />
+            android:textColor="?attr/tlTextPrimary" />
 
         <TextView
             android:id="@+id/settingsButton"
@@ -120,7 +120,7 @@
             android:clickable="true"
             android:text="@string/settings"
             android:textSize="@dimen/header_button_text"
-            android:textColor="@color/text_primary" />
+            android:textColor="?attr/tlTextPrimary" />
     </LinearLayout>
 
     <!-- This frame clips (default) so scrolled rows disappear under the header above. -->
@@ -130,7 +130,7 @@
         android:layout_weight="1"
         android:layout_marginTop="2dp">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/page"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -224,7 +224,7 @@
         android:paddingEnd="@dimen/screen_padding_h"
         android:layout_marginTop="16dp"
         android:textSize="16sp"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/tlTextSecondary"
         android:visibility="gone" />
 
     <!-- Headlines from the RSS feeds chosen in Settings; press a card for the summary. -->
@@ -260,7 +260,7 @@
         android:paddingStart="@dimen/screen_padding_h"
         android:paddingEnd="@dimen/screen_padding_h"
         android:textSize="15sp"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/tlTextSecondary"
         android:textAllCaps="true"
         android:letterSpacing="0.08" />
 
@@ -277,7 +277,7 @@
         android:nextFocusUp="@id/settingsButton"
         android:descendantFocusability="afterDescendants" />
     </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
     </FrameLayout>
 </LinearLayout>
 
@@ -290,7 +290,7 @@
         android:layout_marginEnd="@dimen/screen_padding_h"
         android:layout_marginBottom="6dp"
         android:textSize="11sp"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/tlTextSecondary"
         android:background="@drawable/caption_pill"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"

@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:text="@string/tonight_heading"
         android:textSize="11sp"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/tlTextSecondary"
         android:textAllCaps="true"
         android:letterSpacing="0.06" />
 
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
         android:textSize="@dimen/tonight_text"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/tlTextPrimary"
         android:lineSpacingExtra="2dp"
         android:maxLines="3"
         android:ellipsize="end" />

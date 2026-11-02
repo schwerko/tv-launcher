@@ -16,7 +16,7 @@
         android:layout_height="@dimen/tile_banner_height"
         app:cardCornerRadius="8dp"
         app:cardElevation="0dp"
-        app:cardBackgroundColor="@color/tile">
+        app:cardBackgroundColor="?attr/tlTile">
 
         <ImageView
             android:id="@+id/banner"
@@ -41,7 +41,7 @@
         android:paddingStart="2dp"
         android:paddingEnd="2dp"
         android:textSize="14sp"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/tlTextPrimary"
         android:singleLine="true"
         android:ellipsize="marquee"
         android:marqueeRepeatLimit="marquee_forever" />

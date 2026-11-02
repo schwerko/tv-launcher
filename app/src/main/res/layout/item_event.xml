@@ -10,7 +10,7 @@
     android:foreground="@drawable/tile_focus"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
-    app:cardBackgroundColor="@color/card_glass">
+    app:cardBackgroundColor="?attr/tlCardGlass">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="11sp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/tlTextSecondary"
             android:textAllCaps="true"
             android:letterSpacing="0.06"
             android:singleLine="true" />
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:textSize="16sp"
-            android:textColor="@color/accent"
+            android:textColor="?attr/tlAccent"
             android:singleLine="true" />
 
         <TextView
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="13sp"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/tlTextPrimary"
             android:maxLines="2"
             android:minLines="2"
             android:ellipsize="end" />

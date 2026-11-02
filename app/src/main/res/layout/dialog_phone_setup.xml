@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="15sp"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/tlTextPrimary"
             android:lineSpacingExtra="3dp" />
 
         <TextView
@@ -36,7 +36,7 @@
             android:layout_marginTop="14dp"
             android:textSize="22sp"
             android:fontFamily="monospace"
-            android:textColor="@color/accent" />
+            android:textColor="?attr/tlAccent" />
 
         <TextView
             android:id="@+id/setupCode"
@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:textSize="22sp"
-            android:textColor="@color/text_primary" />
+            android:textColor="?attr/tlTextPrimary" />
 
         <TextView
             android:id="@+id/setupStatus"
@@ -52,6 +52,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textSize="14sp"
-            android:textColor="@color/text_secondary" />
+            android:textColor="?attr/tlTextSecondary" />
     </LinearLayout>
 </LinearLayout>

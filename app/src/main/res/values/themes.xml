@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- "Photo" theme (the original look): background photos, blue accent, glass cards. -->
     <style name="Theme.Launcher" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/bg_gradient</item>
         <item name="android:colorAccent">@color/accent</item>
@@ -7,5 +8,38 @@
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:windowDisablePreview">true</item>
+        <item name="tlAccent">@color/accent</item>
+        <item name="tlFocusFill">#1A85B7EB</item>
+        <item name="tlButtonFocused">@color/accent</item>
+        <item name="tlButtonRest">#26FFFFFF</item>
+        <item name="tlChipRest">#80262930</item>
+        <item name="tlCard">#D9262930</item>
+        <item name="tlCardGlass">@color/card_glass</item>
+        <item name="tlCardGlassFocused">@color/card_glass_focused</item>
+        <item name="tlTile">@color/tile</item>
+        <item name="tlIconBg">@color/icon_bg</item>
+        <item name="tlTextPrimary">@color/text_primary</item>
+        <item name="tlTextSecondary">@color/text_secondary</item>
+    </style>
+
+    <!-- "Dark" theme: black background, grey cards, white text and focus rings, no colour accents. -->
+    <style name="Theme.Launcher.Dark">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:colorAccent">#FFFFFFFF</item>
+        <item name="android:colorPrimary">#FF000000</item>
+        <item name="android:textColorPrimary">#FFFFFFFF</item>
+        <item name="android:textColorSecondary">#FF9E9E9E</item>
+        <item name="tlAccent">#FFFFFFFF</item>
+        <item name="tlFocusFill">#1FFFFFFF</item>
+        <item name="tlButtonFocused">#FF5E5E5E</item>
+        <item name="tlButtonRest">#FF242424</item>
+        <item name="tlChipRest">#FF181818</item>
+        <item name="tlCard">#FF141414</item>
+        <item name="tlCardGlass">#FF181818</item>
+        <item name="tlCardGlassFocused">#FF2C2C2C</item>
+        <item name="tlTile">#FF1C1C1C</item>
+        <item name="tlIconBg">#FF141414</item>
+        <item name="tlTextPrimary">#FFFFFFFF</item>
+        <item name="tlTextSecondary">#FF9E9E9E</item>
     </style>
 </resources>

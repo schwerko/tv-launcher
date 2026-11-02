@@ -23,7 +23,7 @@
         android:singleLine="true"
         android:ellipsize="end"
         android:textSize="11sp"
-        android:textColor="@color/text_secondary" />
+        android:textColor="?attr/tlTextSecondary" />
 
     <TextView
         android:id="@+id/haState"
@@ -33,5 +33,5 @@
         android:singleLine="true"
         android:ellipsize="end"
         android:textSize="@dimen/ac_button_text"
-        android:textColor="@color/text_primary" />
+        android:textColor="?attr/tlTextPrimary" />
 </LinearLayout>

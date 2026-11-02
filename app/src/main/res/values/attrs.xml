@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen palette; Theme.Launcher (photo) and Theme.Launcher.Dark set these. -->
+    <attr name="tlAccent" format="color" />
+    <attr name="tlFocusFill" format="color" />
+    <attr name="tlButtonFocused" format="color" />
+    <attr name="tlButtonRest" format="color" />
+    <attr name="tlChipRest" format="color" />
+    <attr name="tlCard" format="color" />
+    <attr name="tlCardGlass" format="color" />
+    <attr name="tlCardGlassFocused" format="color" />
+    <attr name="tlTile" format="color" />
+    <attr name="tlIconBg" format="color" />
+    <attr name="tlTextPrimary" format="color" />
+    <attr name="tlTextSecondary" format="color" />
+</resources>

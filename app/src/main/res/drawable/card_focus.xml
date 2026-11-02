@@ -3,14 +3,14 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <corners android:radius="10dp" />
-            <solid android:color="@color/card_glass_focused" />
-            <stroke android:width="2dp" android:color="@color/accent" />
+            <solid android:color="?attr/tlCardGlassFocused" />
+            <stroke android:width="2dp" android:color="?attr/tlAccent" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="10dp" />
-            <solid android:color="@color/card_glass" />
+            <solid android:color="?attr/tlCardGlass" />
         </shape>
     </item>
 </selector>

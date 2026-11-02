@@ -147,4 +147,9 @@
     <string name="phone_setup_saved">Saved from your phone at %1$s. You can close this screen.</string>
     <string name="phone_setup_no_network">The TV has no network address. Connect it to Wi-Fi or Ethernet and try again.</string>
     <string name="phone_setup_close">Close</string>
+    <string name="setting_theme">Theme: %1$s</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_photo">Photo (background photos, blue)</string>
+    <string name="theme_dark">Dark (black, grey and white)</string>
+    <string name="background_dark_theme">Plain black (Dark theme)</string>
 </resources>

@@ -26,7 +26,7 @@
         android:focusableInTouchMode="true"
         android:clickable="true"
         android:textSize="11sp"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/tlTextPrimary"
         android:textAllCaps="true"
         android:letterSpacing="0.06" />
 
@@ -56,7 +56,7 @@
             android:minWidth="@dimen/ac_temp_min_width"
             android:gravity="center"
             android:textSize="@dimen/ac_temp_text"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/tlTextPrimary"
             android:fontFamily="sans-serif-light" />
 
         <TextView android:id="@+id/acPlus"
@@ -73,5 +73,5 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:textSize="13sp"
-        android:textColor="@color/text_secondary" />
+        android:textColor="?attr/tlTextSecondary" />
 </LinearLayout>

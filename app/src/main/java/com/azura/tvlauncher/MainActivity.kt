@@ -136,9 +136,11 @@ class MainActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        prefs = Prefs(this)
+        // The theme has to be chosen before any view is created.
+        if (isDark) setTheme(R.style.Theme_Launcher_Dark)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        prefs = Prefs(this)
 
         grid = findViewById(R.id.grid)
         clockView = findViewById(R.id.clock)
@@ -156,11 +158,20 @@ class MainActivity : Activity() {
         agendaStatus = findViewById(R.id.agendaStatus)
         settingsButton = findViewById(R.id.settingsButton)
         wallpaperCredit = findViewById(R.id.wallpaperCredit)
+        if (isDark) {
+            // The weather symbol is a colour emoji; draw it in greyscale to match the theme.
+            val grey = android.graphics.Paint().apply {
+                colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix().apply { setSaturation(0f) })
+            }
+            weatherTemp.setLayerType(View.LAYER_TYPE_HARDWARE, grey)
+        }
 
         adapter = AppAdapter(onClick = ::launchApp, onLongClick = ::showAppOptions)
         grid.layoutManager = GridLayoutManager(this, spanCount())
         grid.adapter = adapter
-        // The grid sits in the page's ScrollView and shows all its rows; the page scrolls instead.
+        // The grid sits in the page's NestedScrollView and shows all its rows; the page scrolls instead.
+        // (A plain ScrollView passes the remaining screen height to the grid, which then lays out
+        // only the rows that fit and scrolls inside itself, drawing over the rows above.)
         grid.isNestedScrollingEnabled = false
         grid.itemAnimator = null
 
@@ -206,7 +217,7 @@ class MainActivity : Activity() {
         window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
             var v: View? = now
             while (v != null && v !== page) v = v.parent as? View
-            if (now != null && v == null) (page as android.widget.ScrollView).smoothScrollTo(0, 0)
+            if (now != null && v == null) (page as androidx.core.widget.NestedScrollView).smoothScrollTo(0, 0)
         }
 
         loadApps()
@@ -396,7 +407,8 @@ class MainActivity : Activity() {
                 prefs.tonightInterests.ifEmpty { listOf(getString(R.string.tonight_interests_any)) }.joinToString(", ").let {
                     if (it.length > 40) it.take(39) + "…" else it
                 }) to { showTonightInterests() },
-            getString(R.string.setting_background, background) to { showBackgroundChooser() },
+            getString(R.string.setting_theme, getString(if (isDark) R.string.theme_dark else R.string.theme_photo)) to { showThemeChooser() },
+            getString(R.string.setting_background, if (isDark) getString(R.string.background_dark_theme) else background) to { showBackgroundChooser() },
             getString(R.string.setting_assistant, if (prefs.assistant == "gemini") "Gemini (free)" else "Claude") to {
                 val choices = arrayOf(getString(R.string.assistant_gemini), getString(R.string.assistant_claude))
                 dialog().setTitle(R.string.setting_assistant_title).setItems(choices) { _, which ->
@@ -672,7 +684,31 @@ class MainActivity : Activity() {
         val scale = if (focused) 1.06f else 1f
         v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
         (v as? androidx.cardview.widget.CardView)?.setCardBackgroundColor(
-            getColor(if (focused) R.color.card_glass_focused else R.color.card_glass))
+            themeColor(if (focused) R.attr.tlCardGlassFocused else R.attr.tlCardGlass))
+    }
+
+    private val isDark: Boolean get() = prefs.theme == THEME_DARK
+
+    private fun themeColor(attr: Int): Int {
+        val tv = android.util.TypedValue()
+        theme.resolveAttribute(attr, tv, true)
+        return tv.data
+    }
+
+    private fun showThemeChooser() {
+        val choices = arrayOf(getString(R.string.theme_photo), getString(R.string.theme_dark))
+        val current = if (isDark) 1 else 0
+        dialog().setTitle(R.string.theme_title)
+            .setSingleChoiceItems(choices, current) { d, which ->
+                d.dismiss()
+                val next = if (which == 1) THEME_DARK else THEME_PHOTO
+                if (next != prefs.theme) {
+                    prefs.theme = next
+                    // Views and drawables pick their colours up when created, so start afresh.
+                    recreate()
+                }
+            }
+            .show()
     }
 
     private fun showAgendaStatus(text: String) {
@@ -742,14 +778,16 @@ class MainActivity : Activity() {
     // ---- background slideshow -------------------------------------------------------------
 
     private fun refreshWallpaper(force: Boolean) {
-        val source = prefs.wallpaper
+        // The dark theme always uses a plain black background; the photo setting is kept for later.
+        val source = if (isDark) WallpaperService.NONE else prefs.wallpaper
         handler.removeCallbacks(slide)
         if (source.isBlank()) {
             wallpaperPhotos = emptyList()
             wallpaperSource = source
             currentBackground = null
             wallpaperCredit.visibility = View.GONE
-            window.setBackgroundDrawableResource(R.drawable.bg_gradient)
+            if (isDark) window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK))
+            else window.setBackgroundDrawableResource(R.drawable.bg_gradient)
             return
         }
         val now = System.currentTimeMillis()
@@ -1533,5 +1571,7 @@ class MainActivity : Activity() {
         const val WALLPAPER_RETRY_MS = 3 * 60_000L
         const val CROSSFADE_MS = 1500
         const val SETUP_PORT = 8765
+        const val THEME_PHOTO = "photo"
+        const val THEME_DARK = "dark"
     }
 }

@@ -115,4 +115,9 @@ class Prefs(context: Context) {
     var tonightTitles: List<String>
         get() = (sp.getString("tonight_titles", "") ?: "").split('|').map { it.trim() }.filter { it.isNotBlank() }
         set(value) = sp.edit().putString("tonight_titles", value.joinToString("|")).apply()
+
+    /** Home-screen theme: "photo" (background photos, blue accent) or "dark" (black, grey, white). */
+    var theme: String
+        get() = sp.getString("theme", "photo") ?: "photo"
+        set(value) = sp.edit().putString("theme", value).apply()
 }
