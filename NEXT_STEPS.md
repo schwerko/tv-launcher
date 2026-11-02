@@ -10,24 +10,21 @@ Everything below needs your accounts or your decisions, so it could not be done 
 
 The code is public at https://github.com/schwerko/tv-launcher (MIT licence). The push token is stored in the macOS keychain, so later pushes are just `git push` from the project folder. The privacy-policy URL for Play is https://github.com/schwerko/tv-launcher/blob/main/PRIVACY.md.
 
-## 3. Google Play developer account (15 minutes + a few days' wait)
+## 3. Google Play developer account — done
 
-play.google.com/console → register (one-time fee, identity verification; a personal account takes a few days to be approved).
+Developer account "Schwerko" is approved. The app exists in the console as **TV Launcher Azure** (`com.azura.tvlauncher`, paid). Console link: https://play.google.com/console/u/0/developers/8852856123804392108/app/4975636464627548772/app-dashboard
 
-## 4. Create the app and fill in the console (about an hour)
+## 4. Console set-up — 10 of 13 dashboard tasks done (1 Nov 2026)
 
-Create app → name **TV Launcher**, app (not game), free. Then work through, pasting from `PLAY_LISTING.md`:
+Done: store listing (descriptions, icon, feature graphic, 6 phone screenshots, TV banner, 6 TV screenshots), Android TV form factor added, privacy policy, ads, sign-in details, target audience (18+), data safety, advertising ID, government, financial, health, category (Tools), contact details (email azur.azapagic@gmail.com and the GitHub page, both shown publicly on Play), closed-testing track "Alpha" with the 1.1 (2) bundle uploaded as a draft release and all 178 countries selected.
 
-- **Grow › Store presence › Main store listing**: short and full description, 512 icon, 1024×500 feature graphic (`store/`).
-- **Release › Advanced settings › Form factors**: add **Android TV**; upload `store/tv_banner_1280x720.png` and the six `store/screenshot_*.png` under the TV listing.
-- **Monitor and improve › Policy and programs › App content**: privacy policy URL (step 2), ads = no, app access = "all functionality available without special access" (the reviewer can use the app without keys; Ask and Cielo just show a setup dialog), content rating questionnaire, target audience 13+, news app = no, data safety (the table in `PLAY_LISTING.md`), government/financial/health = no.
-- **Test and release › Testing › Closed testing**: create a track, upload `app/build/outputs/bundle/release/app-release.aab`, add an email list of testers.
+Still yours (each needs a click that accepts terms or your banking details):
 
-Play may ask you to declare `RECORD_AUDIO`; the wording is in `PLAY_LISTING.md`. It should not ask about package visibility, because the app no longer requests `QUERY_ALL_PACKAGES`.
-
-## 5. The 14-day closed test (Play's rule for personal accounts)
-
-Twelve testers must opt in and stay opted in for 14 days before you can apply for production. Friends with any Android TV / Google TV box qualify; they install from the test link. After 14 days: Dashboard → "Apply for production access", answer the questionnaire, wait for approval, then promote the same bundle to Production.
+1. **Content rating**: App content → Content ratings → Start questionnaire → enter your email, pick **All Other App Types**, tick the IARC terms box, Next. Answers for the questions: no to violence, sexuality, language, drugs, gambling, user interaction/sharing of location, and in-app purchases; "yes" only if it asks whether users can communicate with third-party services (the AI assistant). Submit.
+2. **Android TV opt-in**: Test and release → Advanced settings → Form factors → Android TV → "Opt-in to Android TV and agree to the review policy" → Opt-in.
+3. **Merchant account**: Dashboard → "Create a merchant account" (bank account and tax details; Google pays out monthly). Then Monetize → App pricing → set USD 0.99 (Play's nearest price point to $1) and let it convert the other currencies.
+4. **Testers**: Closed testing → Alpha → Testers tab → create an email list with at least 12 Gmail addresses, save, and copy the opt-in link for them.
+5. **Send for review**: Publishing overview → "Send changes for review". The 14-day clock starts when the testers opt in.
 
 ## 6. Before each later upload
 
