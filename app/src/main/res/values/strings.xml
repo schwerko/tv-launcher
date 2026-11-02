@@ -143,7 +143,7 @@
     <string name="phone_setup_text">Scan the code with your phone, or type the address into its browser. A page opens where you can paste calendar links, API keys and the rest. Enter the 4-digit code on that page to save.</string>
     <string name="phone_setup_address">%1$s</string>
     <string name="phone_setup_code">Code: %1$s</string>
-    <string name="phone_setup_waiting">Waiting… the page works only while this screen is open and only on your home network.</string>
+    <string name="phone_setup_waiting">Waiting for your phone… the page works only while this screen is open.</string>
     <string name="phone_setup_saved">Saved from your phone at %1$s. You can close this screen.</string>
     <string name="phone_setup_no_network">The TV has no network address. Connect it to Wi-Fi or Ethernet and try again.</string>
     <string name="phone_setup_close">Close</string>

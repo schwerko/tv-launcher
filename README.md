@@ -165,7 +165,7 @@ instead.
 - `PRIVACY.md`: the privacy policy (Play needs it at a public URL; a GitHub repository renders it).
 - `PLAY_LISTING.md`: listing text, permission and data-safety declarations, content-rating
   answers and the adb instructions for users, plus the release checklist.
-- `store/`: 512×512 icon, 1024×500 feature graphic, 1280×720 TV banner and seven 1920×1080
+- `store/`: 512×512 icon, 1024×500 feature graphic, 1280×720 TV banner and eight 1920×1080
   screenshots taken on a Google TV Streamer (the calendar cards come from a demo feed and the
   Home Assistant chips from `tools/mock_ha.py`, not from a real home).
 

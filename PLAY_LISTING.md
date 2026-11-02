@@ -31,8 +31,11 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • What's on tonight: three daily picks written by the assistant around the interests you tick, opening straight into your streaming apps.
 > • Home Assistant: your lights, switches, scenes and sensors as chips on the home screen, from your own server.
 >
+> SET UP FROM YOUR PHONE OR PC
+> Nothing long is typed with the remote. Settings › "Set up from your phone" shows a QR code and an address. Scan it with your phone, or type the address into any browser on the same Wi-Fi, and one page lets you paste calendar links, news sources and API keys straight to the TV. Saving needs the 4-digit code shown on the TV; the page exists only while that screen is open, only on your home network, and keys already stored are never shown.
+>
 > BRING YOUR OWN KEYS
-> Weather, photos and the launcher itself need no account. The assistant, Unsplash and Cielo features use API keys you create with those services. Paste them from your phone: Settings shows a QR code that opens a one-page form on your home network, so nothing long is typed with the remote. Keys stay on the TV. The developer runs no server and collects nothing. See the privacy policy for exactly which service receives what.
+> Weather, photos and the launcher itself need no account. The assistant, Unsplash and Cielo features use API keys you create with those services and paste in from your phone. Keys stay on the TV. The developer runs no server and collects nothing. See the privacy policy for exactly which service receives what.
 >
 > MAKING IT YOUR HOME SCREEN
 > Google TV has no "choose launcher" setting, so making TV Launcher the home screen takes a one-time step from a computer with adb (Android's debugging tool). The instructions are in the app's Settings under "Choose default launcher" and on the support page. Until you do that, TV Launcher works as a normal app you open from the Google TV home.
@@ -50,7 +53,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 | App icon | 512×512 PNG | `store/icon_512.png` |
 | Feature graphic | 1024×500 PNG | `store/feature_graphic_1024x500.png` |
 | TV banner | 1280×720 PNG (required for Android TV listings) | `store/tv_banner_1280x720.png` |
-| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` (home, app grid, Tonight, Ask, event details, Settings, screensaver) |
+| TV screenshots | 1920×1080, 16:9, at least one; up to eight | `store/screenshot_*.png` (home, app grid, Tonight, Ask, event details, Settings, screensaver, set up from your phone) |
 
 ## App content declarations
 
