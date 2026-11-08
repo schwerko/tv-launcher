@@ -273,10 +273,13 @@ object KumoClient {
         if (units.isEmpty()) throw IllegalStateException("No indoor units on this Mitsubishi Comfort account")
         for (serial in units.keys.toList()) {
             val st = http("GET", "$V3/v3/devices/$serial/status", access)
+            if (st.first !in 200..299) Log.w(TAG, "device status HTTP ${st.first}")
             val crypto = runCatching { JSONObject(st.second).optString("cryptoSerial") }.getOrDefault("")
             units[serial] = units.getValue(serial).copy(cryptoSerial = crypto)
         }
+        Log.i(TAG, "crypto serials: ${units.values.count { it.cryptoSerial.isNotBlank() }}/${units.size}")
         val passwords = passwordsViaSocket(access, units.keys)
+        Log.i(TAG, "adapter keys: ${passwords.size}/${units.size}")
         units.values.map { it.copy(password = passwords[it.serial].orEmpty()) }
     }
 
@@ -285,10 +288,11 @@ object KumoClient {
         val out = HashMap<String, String>()
         val cookies = HashMap<String, String>()
         val hs = sio("GET", null, access, null, cookies)
-        if (!hs.startsWith("0")) { Log.w(TAG, "socket handshake: ${hs.take(120)}"); return out }
+        if (!hs.startsWith("0")) { Log.w(TAG, "socket handshake failed: ${hs.take(80)}"); return out }
+        Log.i(TAG, "socket handshake ok, cookies: ${cookies.keys}")
         val sid = JSONObject(hs.substring(1)).optString("sid")
         fun post(data: String) = sio("POST", sid, access, data, cookies)
-        fun poll() = sio("GET", sid, access, null, cookies).also { extract(it, serials, out) }
+        fun poll() = sio("GET", sid, access, null, cookies).also { extract(it, serials, out); Log.i(TAG, "socket poll: ${describe(it)}") }
         post("40"); poll()
         userId(access)?.let { post("""42["subscribe","","$it"]"""); poll() }
         post(serials.joinToString("\u001e") { """42["subscribe","$it"]""" }); poll()
@@ -300,6 +304,17 @@ object KumoClient {
             if (text.split('\u001e').any { it == "2" }) runCatching { post("3") }
         }
         return out
+    }
+
+    /** Packet types and event names only (never payloads), for the log. */
+    private fun describe(raw: String): String = raw.split('\u001e').joinToString(" ") { p ->
+        val m = p.substringAfter(':').let { if (p.substringBefore(':').all(Char::isDigit) && p.contains(':')) it else p }
+        when {
+            m.startsWith("42") -> "event:" + (runCatching { JSONArray(m.substring(2)).optString(0) }.getOrNull() ?: "?")
+            m.startsWith("44") -> "connect_error:" + m.drop(2).take(60)
+            m.startsWith("40") -> "connected"
+            else -> m.take(12)
+        }
     }
 
     private fun extract(raw: String, serials: Set<String>, out: MutableMap<String, String>) {
@@ -335,8 +350,14 @@ object KumoClient {
                 conn.setRequestProperty("Content-Type", "text/plain;charset=UTF-8")
                 conn.outputStream.use { it.write(body.toByteArray()) }
             }
-            conn.headerFields["Set-Cookie"]?.forEach { c -> c.substringBefore(';').split('=', limit = 2).takeIf { it.size == 2 }?.let { cookies[it[0]] = it[1] } }
-            (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            val code = conn.responseCode
+            // Load-balancer stickiness: later polls must reach the same server, so keep its cookies.
+            conn.headerFields.filterKeys { it != null && it.equals("Set-Cookie", ignoreCase = true) }.values.flatten().forEach { c ->
+                c.substringBefore(';').split('=', limit = 2).takeIf { it.size == 2 }?.let { cookies[it[0].trim()] = it[1] }
+            }
+            val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) Log.w(TAG, "socket $method HTTP $code: ${text.take(80)}")
+            text
         } finally {
             conn.disconnect()
         }
