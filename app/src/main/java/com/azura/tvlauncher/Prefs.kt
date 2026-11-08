@@ -138,4 +138,9 @@ class Prefs(context: Context) {
     var kumoEmail: String
         get() = sp.getString("kumo_email", "") ?: ""
         set(value) = sp.edit().putString("kumo_email", value.trim()).apply()
+
+    /** Mitsubishi Comfort refresh token, for units controlled through the cloud (renewed on use). */
+    var kumoRefresh: String
+        get() = sp.getString("kumo_refresh", "") ?: ""
+        set(value) = sp.edit().putString("kumo_refresh", value).apply()
 }

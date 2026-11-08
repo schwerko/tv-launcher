@@ -65,6 +65,7 @@ object KumoClient {
         val spHeat: Double?,
         val roomTemp: Double?,
         val fanSpeed: String,
+        val humidity: Double? = null,
     ) {
         val power: Boolean get() = mode.isNotBlank() && mode != "off"
         /** The set point the current mode uses. */
@@ -249,13 +250,21 @@ object KumoClient {
 
     // ---- one-time cloud setup (Mitsubishi Comfort / Kumo Cloud V3) ------------------------
 
-    /** Signs in, lists the account's indoor units and fetches their local-control secrets. */
-    suspend fun fetchUnits(email: String, password: String): List<Unit> = withContext(Dispatchers.IO) {
+    data class Account(val units: List<Unit>, val refreshToken: String)
+
+    /**
+     * Signs in, lists the account's indoor units and tries to fetch their local-control secrets.
+     * Units the cloud gives no local key for are controlled through the cloud with [Cloud], using
+     * the returned refresh token (the password itself is not kept).
+     */
+    suspend fun fetchUnits(email: String, password: String): Account = withContext(Dispatchers.IO) {
         val login = http("POST", "$V3/v3/login", null,
             JSONObject().put("username", email).put("password", password).put("appVersion", APP_VERSION).toString())
         if (login.first == 401 || login.first == 403) throw AuthException("Mitsubishi Comfort rejected the email or password")
         if (login.first !in 200..299) throw IllegalStateException("Sign-in failed (HTTP ${login.first})")
-        val access = JSONObject(login.second).optJSONObject("token")?.optString("access").orEmpty()
+        val tokens = JSONObject(login.second).optJSONObject("token")
+        val access = tokens?.optString("access").orEmpty()
+        val refresh = tokens?.optString("refresh").orEmpty()
         if (access.isBlank()) throw IllegalStateException("Sign-in gave no token")
 
         val units = LinkedHashMap<String, Unit>()
@@ -282,10 +291,10 @@ object KumoClient {
         Log.i(TAG, "crypto serials: ${units.values.count { it.cryptoSerial.isNotBlank() }}/${units.size}")
         val fromSocket = passwordsViaSocket(access, units.keys)
         Log.i(TAG, "adapter keys: ${fromSocket.count { it.value.first.isNotBlank() }}/${units.size}")
-        units.values.map { u ->
+        Account(units.values.map { u ->
             val (pw, crypto) = fromSocket[u.serial] ?: ("" to "")
             u.copy(password = pw, cryptoSerial = u.cryptoSerial.ifBlank { crypto })
-        }
+        }, refresh)
     }
 
     /** The cloud hands out adapter passwords only as "adapter_update" events over Socket.IO. */
@@ -421,6 +430,99 @@ object KumoClient {
         } finally {
             conn.disconnect()
         }
+    }
+
+    // ---- cloud control (units the cloud gives no local key for) ------------------------------
+
+    /**
+     * Mitsubishi Comfort cloud session: status from `GET /v3/devices/{serial}`, commands to
+     * `POST /v3/devices/send-command`, as documented by github.com/ventz/kumo-cloud-v3-api-comfort-client
+     * (MIT). Holds only a refresh token (about 30 days, renewed on every use); [onRefresh]
+     * persists each renewed one. Throws [AuthException] when it has expired and a new sign-in
+     * is needed.
+     */
+    class Cloud(private var refresh: String, private val onRefresh: (String) -> kotlin.Unit) {
+        private var access: String? = null
+        private val lock = Mutex()
+
+        private suspend fun accessToken(force: Boolean): String = lock.withLock {
+            access?.takeIf { !force }?.let { return it }
+            if (refresh.isBlank()) throw AuthException("Sign in to Mitsubishi Comfort again")
+            val r = withContext(Dispatchers.IO) {
+                http("POST", "$V3/v3/refresh", refresh, JSONObject().put("refresh", refresh).toString())
+            }
+            if (r.first == 401 || r.first == 403) throw AuthException("Mitsubishi Comfort sign-in expired; sign in again")
+            if (r.first !in 200..299) throw IllegalStateException("Token refresh failed (HTTP ${r.first})")
+            val j = JSONObject(r.second)
+            val a = j.optString("access").ifBlank { j.optJSONObject("token")?.optString("access").orEmpty() }
+            val nr = j.optString("refresh").ifBlank { j.optJSONObject("token")?.optString("refresh").orEmpty() }
+            if (a.isBlank()) throw IllegalStateException("Token refresh gave no token")
+            access = a
+            if (nr.isNotBlank() && nr != refresh) { refresh = nr; onRefresh(nr) }
+            a
+        }
+
+        private suspend fun call(method: String, path: String, body: String? = null): Pair<Int, String> {
+            var r = withContext(Dispatchers.IO) { http(method, "$V3$path", accessToken(false), body) }
+            if (r.first == 401) r = withContext(Dispatchers.IO) { http(method, "$V3$path", accessToken(true), body) }
+            return r
+        }
+
+        suspend fun status(serial: String): Status? {
+            val r = runCatching { call("GET", "/v3/devices/$serial") }.getOrElse { if (it is AuthException) throw it; Log.w(TAG, "cloud status: ${it.message}"); return null }
+            if (r.first !in 200..299) { Log.w(TAG, "cloud status HTTP ${r.first}"); return null }
+            val d = runCatching { JSONObject(r.second) }.getOrNull() ?: return null
+            if (d.has("connected") && !d.optBoolean("connected")) return null
+            val on = d.optInt("power", 1) != 0
+            return Status(
+                mode = if (on) d.optString("operationMode", "") else "off",
+                spCool = d.optDoubleOrNull("spCool"),
+                spHeat = d.optDoubleOrNull("spHeat"),
+                roomTemp = d.optDoubleOrNull("roomTemp"),
+                fanSpeed = d.optString("fanSpeed", ""),
+                humidity = d.optDoubleOrNull("humidity"),
+            )
+        }
+
+        /** Capabilities, read defensively: the profile reply's layout is not documented. */
+        suspend fun profile(serial: String): Profile? {
+            val r = runCatching { call("GET", "/v3/devices/$serial/profile") }.getOrNull() ?: return null
+            if (r.first !in 200..299) return null
+            val node: Any = runCatching { JSONArray(r.second) as Any }.recoverCatching { JSONObject(r.second) }.getOrNull() ?: return null
+            Log.i(TAG, "cloud profile shape: ${shape(node)}")
+            fun flag(key: String) = findString(node, listOf(key)) == "true"
+            val modes = buildList {
+                add("cool")
+                if (flag("hasModeHeat")) add("heat")
+                if (flag("hasModeDry")) add("dry")
+                if (flag("hasModeVent")) add("vent")
+                if (flag("hasModeAuto")) add("auto")
+            }.let { if (it.size == 1) listOf("cool", "heat", "dry", "vent") else it }
+            val fans = when (findString(node, listOf("numberOfFanSpeeds"))?.toIntOrNull()) {
+                4 -> mutableListOf("quiet", "low", "powerful", "superPowerful")
+                else -> mutableListOf("superQuiet", "quiet", "low", "powerful", "superPowerful")
+            }
+            if (flag("hasFanSpeedAuto")) fans.add(0, "auto")
+            return Profile(modes, fans, 16.0, 31.0, 10.0, 31.0)
+        }
+
+        suspend fun send(serial: String, commands: JSONObject): Boolean {
+            val body = JSONObject().put("deviceSerial", serial).put("commands", commands).toString()
+            val r = runCatching { call("POST", "/v3/devices/send-command", body) }.getOrElse { if (it is AuthException) throw it; return false }
+            if (r.first !in 200..299) Log.w(TAG, "cloud command HTTP ${r.first}: ${r.second.take(120)}")
+            return r.first in 200..299
+        }
+
+        /** Mitsubishi asks for operationMode "off" as well as power 0; power alone is ignored on some units. */
+        suspend fun setMode(serial: String, mode: String) = send(serial,
+            if (mode == "off") JSONObject().put("operationMode", "off").put("power", 0)
+            else JSONObject().put("operationMode", mode).put("power", 1))
+
+        suspend fun setFan(serial: String, speed: String) = send(serial, JSONObject().put("fanSpeed", speed))
+
+        /** The cloud accepts set points in 0.5 °C steps only. */
+        suspend fun setSetPoint(serial: String, mode: String, celsius: Double) =
+            send(serial, JSONObject().put(if (mode == "heat") "spHeat" else "spCool", Math.round(celsius * 2) / 2.0))
     }
 
     // ---- helpers -----------------------------------------------------------------------------

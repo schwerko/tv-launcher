@@ -104,6 +104,26 @@ class MainActivity : Activity() {
     private var kumoLastMode: MutableMap<String, String> = HashMap()
     private var kumoBusy = false
     private var kumoRelocating = false
+    private var kumoCloud: KumoClient.Cloud? = null
+    private var kumoCloudExpired = false
+
+    /** Units without a local key are controlled through Mitsubishi's cloud. */
+    private fun KumoClient.Unit.viaCloud() = password.isBlank() || cryptoSerial.isBlank()
+
+    private fun cloud(): KumoClient.Cloud? =
+        kumoCloud ?: prefs.kumoRefresh.takeIf { it.isNotBlank() }?.let { r ->
+            KumoClient.Cloud(r) { prefs.kumoRefresh = it }.also { kumoCloud = it }
+        }
+
+    private suspend fun kumoStatusOf(u: KumoClient.Unit): KumoClient.Status? =
+        if (!u.viaCloud()) KumoClient.status(u) else try {
+            cloud()?.status(u.serial)
+        } catch (e: KumoClient.AuthException) {
+            kumoCloudExpired = true; null
+        }
+
+    private suspend fun kumoProfileOf(u: KumoClient.Unit): KumoClient.Profile? =
+        if (!u.viaCloud()) KumoClient.profile(u) else runCatching { cloud()?.profile(u.serial) }.getOrNull()
     private val kumoActive: Boolean get() = kumoUnits.isNotEmpty()
     private val kumoUnit: KumoClient.Unit? get() = kumoUnits.firstOrNull { it.serial == prefs.kumoSelected } ?: kumoUnits.firstOrNull()
     private var acDevice: CieloClient.Device? = null
@@ -1436,16 +1456,20 @@ class MainActivity : Activity() {
             val statuses = HashMap(kumoStatus)
             var missing = false
             for (u in units) {
-                val st = if (u.address.isBlank()) null else KumoClient.status(u)
-                if (st == null) { missing = true; continue }
+                val st = if (!u.viaCloud() && u.address.isBlank()) null else kumoStatusOf(u)
+                if (st == null) { statuses.remove(u.serial); if (!u.viaCloud()) missing = true; continue }
                 statuses[u.serial] = st
                 if (st.power) kumoLastMode[u.serial] = st.mode
-                if (u.serial !in kumoProfiles) KumoClient.profile(u)?.let { kumoProfiles = kumoProfiles + (u.serial to it) }
+                if (u.serial !in kumoProfiles) kumoProfileOf(u)?.let { kumoProfiles = kumoProfiles + (u.serial to it) }
             }
             kumoStatus = statuses
             renderKumo()
             // An adapter that stopped answering has usually moved to a new address: look again.
             if (missing && !kumoRelocating) relocateKumo(units)
+            if (kumoCloudExpired) {
+                kumoCloudExpired = false
+                Toast.makeText(this@MainActivity, R.string.kumo_signin_expired, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -1453,7 +1477,9 @@ class MainActivity : Activity() {
         kumoRelocating = true
         scope.launch {
             try {
-                val located = KumoClient.locate(units, prefer = units.map { it.address })
+                val local = units.filterNot { it.viaCloud() }
+                val found = KumoClient.locate(local, prefer = local.map { it.address }).associateBy { it.serial }
+                val located = units.map { found[it.serial] ?: it }
                 if (located != units) {
                     kumoUnits = located
                     prefs.kumoUnits = located
@@ -1472,14 +1498,17 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.acName).text = if (kumoUnits.size > 1) "${u.label}  ▸" else u.label
         val temp = findViewById<TextView>(R.id.acTemp)
         temp.text = when {
-            st == null -> getString(if (u.address.isBlank() || kumoRelocating) R.string.kumo_searching else R.string.cielo_offline)
+            st == null -> getString(if (!u.viaCloud() && (u.address.isBlank() || kumoRelocating)) R.string.kumo_searching else R.string.cielo_offline)
             !st.power -> getString(R.string.cielo_off)
             else -> st.setPoint()?.let { kumoTempText(it) } ?: "—"
         }
         val mode = st?.mode?.takeIf { it != "off" } ?: kumoLastMode[u.serial] ?: "cool"
         findViewById<TextView>(R.id.acMode).text = KumoClient.modeLabel(mode)
         findViewById<TextView>(R.id.acFan).text = getString(R.string.cielo_fan, st?.fanSpeed?.let { KumoClient.fanLabel(it) } ?: "—")
-        val room = st?.roomTemp?.let { getString(R.string.cielo_room, kumoTempText(it)) }.orEmpty()
+        val room = buildString {
+            st?.roomTemp?.let { append(getString(R.string.cielo_room, kumoTempText(it))) }
+            st?.humidity?.let { if (isNotEmpty()) append(" · "); append("${it.toInt()}%") }
+        }
         findViewById<TextView>(R.id.acRoom).text = room
         findViewById<TextView>(R.id.acRoom).visibility = if (room.isBlank()) View.GONE else View.VISIBLE
         val hasSetPoint = st?.power == true && st.setPoint() != null
@@ -1498,14 +1527,20 @@ class MainActivity : Activity() {
     }
 
     /** Runs one command against the selected unit, then shows its real state a moment later. */
-    private fun kumoCommand(optimistic: (KumoClient.Status) -> KumoClient.Status, call: suspend (KumoClient.Unit) -> Boolean) {
+    private fun kumoCommand(optimistic: (KumoClient.Status) -> KumoClient.Status, local: suspend (KumoClient.Unit) -> Boolean, viaCloud: suspend (KumoClient.Cloud, String) -> Boolean) {
         val u = kumoUnit ?: return
-        if (kumoBusy || u.address.isBlank()) return
+        if (kumoBusy || (!u.viaCloud() && u.address.isBlank())) return
         kumoBusy = true
         kumoStatus[u.serial]?.let { kumoStatus = kumoStatus + (u.serial to optimistic(it)); renderKumo() }
         scope.launch {
             try {
-                if (!call(u)) Toast.makeText(this@MainActivity, R.string.kumo_error, Toast.LENGTH_SHORT).show()
+                val ok = if (!u.viaCloud()) local(u) else {
+                    val c = cloud()
+                    if (c == null) false else try { viaCloud(c, u.serial) } catch (e: KumoClient.AuthException) {
+                        Toast.makeText(this@MainActivity, R.string.kumo_signin_expired, Toast.LENGTH_LONG).show(); true
+                    }
+                }
+                if (!ok) Toast.makeText(this@MainActivity, R.string.kumo_error, Toast.LENGTH_SHORT).show()
             } finally {
                 kumoBusy = false
                 handler.removeCallbacks(acResync)
@@ -1518,7 +1553,7 @@ class MainActivity : Activity() {
         val u = kumoUnit ?: return
         val st = kumoStatus[u.serial] ?: return
         val next = if (st.power) "off" else (kumoLastMode[u.serial] ?: "cool")
-        kumoCommand({ it.copy(mode = next) }) { KumoClient.setMode(it, next) }
+        kumoCommand({ it.copy(mode = next) }, { KumoClient.setMode(it, next) }) { c, s -> c.setMode(s, next) }
     }
 
     private fun kumoNextMode() {
@@ -1527,7 +1562,7 @@ class MainActivity : Activity() {
         val current = kumoStatus[u.serial]?.mode?.takeIf { it != "off" } ?: kumoLastMode[u.serial] ?: modes.last()
         val next = modes[(modes.indexOf(current) + 1).mod(modes.size)]
         kumoLastMode[u.serial] = next
-        kumoCommand({ it.copy(mode = next) }) { KumoClient.setMode(it, next) }
+        kumoCommand({ it.copy(mode = next) }, { KumoClient.setMode(it, next) }) { c, s -> c.setMode(s, next) }
     }
 
     private fun kumoNextFan() {
@@ -1535,7 +1570,7 @@ class MainActivity : Activity() {
         val speeds = kumoProfiles[u.serial]?.fanSpeeds ?: listOf("superQuiet", "quiet", "low", "powerful", "superPowerful")
         val current = kumoStatus[u.serial]?.fanSpeed.orEmpty()
         val next = speeds[(speeds.indexOf(current) + 1).mod(speeds.size)]
-        kumoCommand({ it.copy(fanSpeed = next) }) { KumoClient.setFan(it, next) }
+        kumoCommand({ it.copy(fanSpeed = next) }, { KumoClient.setFan(it, next) }) { c, s -> c.setFan(s, next) }
     }
 
     private fun kumoNudge(delta: Int) {
@@ -1548,9 +1583,8 @@ class MainActivity : Activity() {
         val next = (if (prefs.fahrenheit) KumoClient.fToC((KumoClient.cToF(current) + delta).toDouble()) else current + delta * 0.5)
             .coerceIn(lo, hi)
         if (next == current) return
-        kumoCommand({ if (st.mode == "heat") it.copy(spHeat = next) else it.copy(spCool = next) }) {
-            KumoClient.setSetPoint(it, st.mode, next)
-        }
+        kumoCommand({ if (st.mode == "heat") it.copy(spHeat = next) else it.copy(spCool = next) },
+            { KumoClient.setSetPoint(it, st.mode, next) }) { c, s -> c.setSetPoint(s, st.mode, next) }
     }
 
     private fun showKumoSettings() {
@@ -1568,6 +1602,7 @@ class MainActivity : Activity() {
             }
             items += getString(R.string.kumo_forget) to {
                 kumoUnits = emptyList(); prefs.kumoUnits = emptyList(); kumoStatus = emptyMap(); kumoProfiles = emptyMap()
+                prefs.kumoRefresh = ""; kumoCloud = null
                 acCard.visibility = View.GONE
                 refreshAc(force = true)
             }
@@ -1587,23 +1622,27 @@ class MainActivity : Activity() {
         scope.launch {
             try {
                 android.util.Log.i("Kumo", "setup: signing in")
-                val fetched = KumoClient.fetchUnits(email, password)
-                val usable = fetched.filter { it.password.isNotBlank() && it.cryptoSerial.isNotBlank() }
-                android.util.Log.i("Kumo", "setup: ${fetched.size} unit(s) on the account, ${usable.size} with local keys")
-                if (usable.isEmpty()) {
+                val account = KumoClient.fetchUnits(email, password)
+                val fetched = account.units
+                val localCount = fetched.count { !it.viaCloud() }
+                android.util.Log.i("Kumo", "setup: ${fetched.size} unit(s) on the account, $localCount with local keys")
+                if (localCount < fetched.size && account.refreshToken.isBlank()) {
                     dialog().setTitle(R.string.kumo_title).setMessage(R.string.kumo_no_keys)
                         .setPositiveButton(android.R.string.ok, null).show()
                     return@launch
                 }
+                prefs.kumoRefresh = account.refreshToken
+                kumoCloud = null
                 progress.setMessage(getString(R.string.kumo_searching_long))
-                val located = KumoClient.locate(usable)
+                val found = KumoClient.locate(fetched.filterNot { it.viaCloud() }).associateBy { it.serial }
+                val located = fetched.map { found[it.serial] ?: it }
                 android.util.Log.i("Kumo", "setup: located ${located.count { it.address.isNotBlank() }}/${located.size}")
                 kumoUnits = located
                 prefs.kumoUnits = located
                 if (located.none { it.serial == prefs.kumoSelected }) prefs.kumoSelected = located.first().serial
                 kumoStatus = emptyMap(); kumoProfiles = emptyMap()
                 refreshKumo(force = true)
-                kumoReport(skipped = fetched.size - usable.size)
+                kumoReport()
             } catch (e: KumoClient.AuthException) {
                 android.util.Log.w("Kumo", "setup: sign-in rejected")
                 dialog().setTitle(R.string.kumo_title).setMessage(getString(R.string.kumo_rejected, email))
@@ -1620,7 +1659,11 @@ class MainActivity : Activity() {
 
     private fun kumoReport(skipped: Int = 0) {
         val lines = kumoUnits.joinToString("\n") { u ->
-            "• ${u.label}: " + if (u.address.isNotBlank()) getString(R.string.kumo_found_at, u.address.substringBefore(':')) else getString(R.string.kumo_not_found)
+            "• ${u.label}: " + when {
+                u.viaCloud() -> getString(R.string.kumo_via_cloud)
+                u.address.isNotBlank() -> getString(R.string.kumo_found_at, u.address.substringBefore(':'))
+                else -> getString(R.string.kumo_not_found)
+            }
         }
         val extra = if (skipped > 0) "\n\n" + getString(R.string.kumo_skipped, skipped) else ""
         dialog().setTitle(R.string.kumo_title).setMessage(lines + extra).setPositiveButton(android.R.string.ok, null).show()
