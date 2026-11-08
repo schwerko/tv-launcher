@@ -132,14 +132,14 @@ class SetupServer(
 
     private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
-    private fun field(name: String, label: String, hint: String, values: Map<String, String>, set: Set<String>, multiline: Boolean = false): String {
+    private fun field(name: String, label: String, hint: String, values: Map<String, String>, set: Set<String>, multiline: Boolean = false, password: Boolean = false): String {
         val secret = name in SECRETS
         val value = if (secret) "" else esc(values[name].orEmpty())
         val placeholder = if (secret && name in set) "Already set. Leave blank to keep it." else hint
         val input = if (multiline)
             "<textarea name=\"$name\" rows=\"3\" placeholder=\"${esc(placeholder)}\">$value</textarea>"
         else
-            "<input name=\"$name\" value=\"$value\" placeholder=\"${esc(placeholder)}\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\">"
+            "<input name=\"$name\"${if (password) " type=\"password\"" else ""} value=\"$value\" placeholder=\"${esc(placeholder)}\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\">"
         return "<label>$label$input</label>"
     }
 
@@ -160,6 +160,10 @@ class SetupServer(
         sb.append(field("claude_key", "Anthropic API key (console.anthropic.com)", "sk-ant-…", values, set))
         sb.append(field("cielo_key", "Cielo API key (home.cielowigle.com › Home Assistant)", "", values, set))
         sb.append(field("unsplash_key", "Unsplash access key (unsplash.com/developers)", "", values, set))
+        sb.append("<h2>Mitsubishi Comfort air conditioners</h2>")
+        sb.append("<p class=\"sub\">Sign in once so the TV can fetch each unit's local key; the password is used for this one sign-in and not kept. After that the TV talks to the units directly on your network.</p>")
+        sb.append(field("kumo_email", "Mitsubishi Comfort email", "name@example.com", values, set))
+        sb.append(field("kumo_password", "Mitsubishi Comfort password", "Only needed to set up or add units", values, set, password = true))
         sb.append("<h2>Home Assistant</h2>")
         sb.append(field("ha_url", "Server address", "http://homeassistant.local:8123", values, set))
         sb.append(field("ha_token", "Long-lived access token (your profile › Security)", "eyJ…", values, set))
@@ -182,7 +186,7 @@ class SetupServer(
     companion object {
         private const val TAG = "SetupServer"
         private const val MAX_FAILURES = 5
-        val SECRETS = setOf("gemini_key", "claude_key", "cielo_key", "unsplash_key", "ha_token")
+        val SECRETS = setOf("gemini_key", "claude_key", "cielo_key", "unsplash_key", "ha_token", "kumo_password")
         private const val HEAD = "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
             "<title>TV Launcher setup</title><style>" +
             "body{margin:0;background:#14161b;color:#f2f1ec;font:16px/1.45 -apple-system,Roboto,Helvetica,Arial,sans-serif}" +

@@ -96,6 +96,16 @@ class MainActivity : Activity() {
     private var askDialog: AskDialog? = null
 
     private var cielo: CieloClient? = null
+
+    // Mitsubishi Comfort (Kumo) units: when any are set up, the AC card controls them instead of Cielo.
+    private var kumoUnits: List<KumoClient.Unit> = emptyList()
+    private var kumoStatus: Map<String, KumoClient.Status> = emptyMap()
+    private var kumoProfiles: Map<String, KumoClient.Profile> = emptyMap()
+    private var kumoLastMode: MutableMap<String, String> = HashMap()
+    private var kumoBusy = false
+    private var kumoRelocating = false
+    private val kumoActive: Boolean get() = kumoUnits.isNotEmpty()
+    private val kumoUnit: KumoClient.Unit? get() = kumoUnits.firstOrNull { it.serial == prefs.kumoSelected } ?: kumoUnits.firstOrNull()
     private var acDevice: CieloClient.Device? = null
     private var acDevices: List<CieloClient.Device> = emptyList()
     private var lastAcAt = 0L
@@ -183,6 +193,7 @@ class MainActivity : Activity() {
                 v.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
             }
         }
+        kumoUnits = prefs.kumoUnits
         setupAcCard()
         setupMediaCard()
         tonightCard.setOnClickListener { showTonightDetails() }
@@ -442,6 +453,9 @@ class MainActivity : Activity() {
                     }
                 }
             },
+            getString(R.string.setting_kumo, if (kumoUnits.isEmpty()) getString(R.string.not_set) else resources.getQuantityString(R.plurals.kumo_units, kumoUnits.size, kumoUnits.size)) to {
+                showKumoSettings()
+            },
             getString(R.string.setting_media, getString(if (mediaListenerEnabled()) R.string.media_on else R.string.media_needs_access)) to {
                 showMediaAccessHelp()
             },
@@ -556,6 +570,7 @@ class MainActivity : Activity() {
                     "wallpaper_urls" to prefs.wallpaper.takeUnless { it == WallpaperService.COMMONS || it == WallpaperService.UNSPLASH }
                         .orEmpty().split(Regex("\\s+")).filter { it.isNotBlank() }.joinToString("\n"),
                     "ha_url" to prefs.haUrl,
+                    "kumo_email" to prefs.kumoEmail,
                 )
             },
             secretsSet = {
@@ -606,6 +621,10 @@ class MainActivity : Activity() {
         v["ha_url"]?.let { if (it != prefs.haUrl) { prefs.haUrl = it; ha = true } }
         v["ha_token"]?.let { prefs.haToken = it; ha = true }
         if (ha) { this.ha = null; haFailed = false; refreshHa(force = true) }
+        val kumoPassword = v["kumo_password"].orEmpty()
+        val kumoEmail = v["kumo_email"].orEmpty().ifBlank { prefs.kumoEmail }
+        if (kumoPassword.isNotEmpty() && kumoEmail.isNotBlank()) setupKumo(kumoEmail, kumoPassword)
+        else v["kumo_email"]?.let { prefs.kumoEmail = it }
         if (ask) resetAssistant()
         if (widgets) refreshWidgets(force = true)
         if (news) refreshNews(force = true)
@@ -1406,6 +1425,213 @@ class MainActivity : Activity() {
         }
     }
 
+    // ---- Mitsubishi Comfort (Kumo) ---------------------------------------------------------
+
+    private fun refreshKumo(force: Boolean) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastAcAt < KUMO_REFRESH_MS) return
+        lastAcAt = now
+        val units = kumoUnits
+        scope.launch {
+            val statuses = HashMap(kumoStatus)
+            var missing = false
+            for (u in units) {
+                val st = if (u.address.isBlank()) null else KumoClient.status(u)
+                if (st == null) { missing = true; continue }
+                statuses[u.serial] = st
+                if (st.power) kumoLastMode[u.serial] = st.mode
+                if (u.serial !in kumoProfiles) KumoClient.profile(u)?.let { kumoProfiles = kumoProfiles + (u.serial to it) }
+            }
+            kumoStatus = statuses
+            renderKumo()
+            // An adapter that stopped answering has usually moved to a new address: look again.
+            if (missing && !kumoRelocating) relocateKumo(units)
+        }
+    }
+
+    private fun relocateKumo(units: List<KumoClient.Unit>, onDone: (() -> Unit)? = null) {
+        kumoRelocating = true
+        scope.launch {
+            try {
+                val located = KumoClient.locate(units, prefer = units.map { it.address })
+                if (located != units) {
+                    kumoUnits = located
+                    prefs.kumoUnits = located
+                }
+            } finally {
+                kumoRelocating = false
+                onDone?.invoke()
+            }
+        }
+    }
+
+    private fun renderKumo() {
+        val u = kumoUnit ?: run { acCard.visibility = View.GONE; return }
+        val st = kumoStatus[u.serial]
+        acCard.visibility = View.VISIBLE
+        findViewById<TextView>(R.id.acName).text = if (kumoUnits.size > 1) "${u.label}  ▸" else u.label
+        val temp = findViewById<TextView>(R.id.acTemp)
+        temp.text = when {
+            st == null -> getString(if (u.address.isBlank() || kumoRelocating) R.string.kumo_searching else R.string.cielo_offline)
+            !st.power -> getString(R.string.cielo_off)
+            else -> st.setPoint()?.let { kumoTempText(it) } ?: "—"
+        }
+        val mode = st?.mode?.takeIf { it != "off" } ?: kumoLastMode[u.serial] ?: "cool"
+        findViewById<TextView>(R.id.acMode).text = KumoClient.modeLabel(mode)
+        findViewById<TextView>(R.id.acFan).text = getString(R.string.cielo_fan, st?.fanSpeed?.let { KumoClient.fanLabel(it) } ?: "—")
+        val room = st?.roomTemp?.let { getString(R.string.cielo_room, kumoTempText(it)) }.orEmpty()
+        findViewById<TextView>(R.id.acRoom).text = room
+        findViewById<TextView>(R.id.acRoom).visibility = if (room.isBlank()) View.GONE else View.VISIBLE
+        val hasSetPoint = st?.power == true && st.setPoint() != null
+        listOf(R.id.acMinus, R.id.acPlus).forEach { findViewById<View>(it).alpha = if (hasSetPoint) 1f else 0.4f }
+    }
+
+    private fun kumoTempText(celsius: Double): String =
+        if (prefs.fahrenheit) "${KumoClient.cToF(celsius)}°"
+        else if (celsius % 1.0 == 0.0) "${celsius.toInt()}°" else "%.1f°".format(Locale.getDefault(), celsius)
+
+    private fun kumoNextUnit() {
+        if (kumoUnits.size < 2) return
+        val i = kumoUnits.indexOfFirst { it.serial == kumoUnit?.serial }
+        prefs.kumoSelected = kumoUnits[(i + 1).mod(kumoUnits.size)].serial
+        renderKumo()
+    }
+
+    /** Runs one command against the selected unit, then shows its real state a moment later. */
+    private fun kumoCommand(optimistic: (KumoClient.Status) -> KumoClient.Status, call: suspend (KumoClient.Unit) -> Boolean) {
+        val u = kumoUnit ?: return
+        if (kumoBusy || u.address.isBlank()) return
+        kumoBusy = true
+        kumoStatus[u.serial]?.let { kumoStatus = kumoStatus + (u.serial to optimistic(it)); renderKumo() }
+        scope.launch {
+            try {
+                if (!call(u)) Toast.makeText(this@MainActivity, R.string.kumo_error, Toast.LENGTH_SHORT).show()
+            } finally {
+                kumoBusy = false
+                handler.removeCallbacks(acResync)
+                handler.postDelayed(acResync, KUMO_RESYNC_MS)
+            }
+        }
+    }
+
+    private fun kumoPower() {
+        val u = kumoUnit ?: return
+        val st = kumoStatus[u.serial] ?: return
+        val next = if (st.power) "off" else (kumoLastMode[u.serial] ?: "cool")
+        kumoCommand({ it.copy(mode = next) }) { KumoClient.setMode(it, next) }
+    }
+
+    private fun kumoNextMode() {
+        val u = kumoUnit ?: return
+        val modes = kumoProfiles[u.serial]?.modes ?: listOf("cool", "heat")
+        val current = kumoStatus[u.serial]?.mode?.takeIf { it != "off" } ?: kumoLastMode[u.serial] ?: modes.last()
+        val next = modes[(modes.indexOf(current) + 1).mod(modes.size)]
+        kumoLastMode[u.serial] = next
+        kumoCommand({ it.copy(mode = next) }) { KumoClient.setMode(it, next) }
+    }
+
+    private fun kumoNextFan() {
+        val u = kumoUnit ?: return
+        val speeds = kumoProfiles[u.serial]?.fanSpeeds ?: listOf("superQuiet", "quiet", "low", "powerful", "superPowerful")
+        val current = kumoStatus[u.serial]?.fanSpeed.orEmpty()
+        val next = speeds[(speeds.indexOf(current) + 1).mod(speeds.size)]
+        kumoCommand({ it.copy(fanSpeed = next) }) { KumoClient.setFan(it, next) }
+    }
+
+    private fun kumoNudge(delta: Int) {
+        val u = kumoUnit ?: return
+        val st = kumoStatus[u.serial] ?: return
+        if (!st.power) return
+        val current = st.setPoint() ?: return
+        val p = kumoProfiles[u.serial]
+        val (lo, hi) = if (st.mode == "heat") (p?.minHeat ?: 10.0) to (p?.maxHeat ?: 31.0) else (p?.minCool ?: 16.0) to (p?.maxCool ?: 31.0)
+        val next = (if (prefs.fahrenheit) KumoClient.fToC((KumoClient.cToF(current) + delta).toDouble()) else current + delta * 0.5)
+            .coerceIn(lo, hi)
+        if (next == current) return
+        kumoCommand({ if (st.mode == "heat") it.copy(spHeat = next) else it.copy(spCool = next) }) {
+            KumoClient.setSetPoint(it, st.mode, next)
+        }
+    }
+
+    private fun showKumoSettings() {
+        val items = mutableListOf<Pair<String, () -> Unit>>()
+        items += getString(R.string.kumo_sign_in) to {
+            promptText(getString(R.string.kumo_email_prompt), prefs.kumoEmail, "name@example.com") { email ->
+                if (email.isBlank()) return@promptText
+                promptSecret(getString(R.string.kumo_password_prompt)) { pw -> if (pw.isNotEmpty()) setupKumo(email, pw) }
+            }
+        }
+        if (kumoUnits.isNotEmpty()) {
+            items += getString(R.string.kumo_find_again) to {
+                Toast.makeText(this, R.string.kumo_searching_long, Toast.LENGTH_LONG).show()
+                relocateKumo(kumoUnits.map { it.copy(address = "") }) { refreshKumo(force = true); kumoReport() }
+            }
+            items += getString(R.string.kumo_forget) to {
+                kumoUnits = emptyList(); prefs.kumoUnits = emptyList(); kumoStatus = emptyMap(); kumoProfiles = emptyMap()
+                acCard.visibility = View.GONE
+                refreshAc(force = true)
+            }
+        }
+        val title = if (kumoUnits.isEmpty()) getString(R.string.kumo_title)
+        else getString(R.string.kumo_title_units, kumoUnits.joinToString(", ") { it.label })
+        dialog().setTitle(title)
+            .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
+            .show()
+    }
+
+    /** Signs in once, fetches each unit's local key, finds the units on the network, forgets the password. */
+    private fun setupKumo(email: String, password: String) {
+        prefs.kumoEmail = email
+        Toast.makeText(this, R.string.kumo_signing_in, Toast.LENGTH_LONG).show()
+        scope.launch {
+            try {
+                val fetched = KumoClient.fetchUnits(email, password)
+                val usable = fetched.filter { it.password.isNotBlank() && it.cryptoSerial.isNotBlank() }
+                if (usable.isEmpty()) {
+                    dialog().setTitle(R.string.kumo_title).setMessage(R.string.kumo_no_keys)
+                        .setPositiveButton(android.R.string.ok, null).show()
+                    return@launch
+                }
+                Toast.makeText(this@MainActivity, R.string.kumo_searching_long, Toast.LENGTH_LONG).show()
+                val located = KumoClient.locate(usable)
+                kumoUnits = located
+                prefs.kumoUnits = located
+                if (located.none { it.serial == prefs.kumoSelected }) prefs.kumoSelected = located.first().serial
+                kumoStatus = emptyMap(); kumoProfiles = emptyMap()
+                refreshKumo(force = true)
+                kumoReport(skipped = fetched.size - usable.size)
+            } catch (e: KumoClient.AuthException) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                android.util.Log.w("Kumo", "setup failed", e)
+                Toast.makeText(this@MainActivity, getString(R.string.kumo_setup_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun kumoReport(skipped: Int = 0) {
+        val lines = kumoUnits.joinToString("\n") { u ->
+            "• ${u.label}: " + if (u.address.isNotBlank()) getString(R.string.kumo_found_at, u.address.substringBefore(':')) else getString(R.string.kumo_not_found)
+        }
+        val extra = if (skipped > 0) "\n\n" + getString(R.string.kumo_skipped, skipped) else ""
+        dialog().setTitle(R.string.kumo_title).setMessage(lines + extra).setPositiveButton(android.R.string.ok, null).show()
+    }
+
+    /** Like promptText, but the field hides what is typed and starts empty. */
+    private fun promptSecret(title: String, onDone: (String) -> Unit) {
+        val input = EditText(this).apply {
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val pad = (20 * resources.displayMetrics.density).toInt()
+        val wrapper = FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) }
+        dialog().setTitle(title).setView(wrapper)
+            .setPositiveButton(android.R.string.ok) { _, _ -> onDone(input.text.toString()) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        input.requestFocus()
+    }
+
     // ---- Cielo air conditioner ------------------------------------------------------------
 
     private val acCard: View get() = findViewById(R.id.acCard)
@@ -1419,6 +1645,7 @@ class MainActivity : Activity() {
             findViewById<View>(it).onFocusChangeListener = scaleOnFocus
         }
         findViewById<View>(R.id.acName).setOnClickListener {
+            if (kumoActive) { kumoNextUnit(); return@setOnClickListener }
             val list = acDevices
             if (list.size < 2) return@setOnClickListener
             val current = acDevice
@@ -1428,12 +1655,14 @@ class MainActivity : Activity() {
             renderAc()
         }
         findViewById<View>(R.id.acPower).setOnClickListener {
+            if (kumoActive) { kumoPower(); return@setOnClickListener }
             val d = acDevice ?: return@setOnClickListener
             sendAc("power", mapOf("power" to if (d.power) "off" else "on"))
         }
-        findViewById<View>(R.id.acMinus).setOnClickListener { nudgeTemp(-1) }
-        findViewById<View>(R.id.acPlus).setOnClickListener { nudgeTemp(+1) }
+        findViewById<View>(R.id.acMinus).setOnClickListener { if (kumoActive) kumoNudge(-1) else nudgeTemp(-1) }
+        findViewById<View>(R.id.acPlus).setOnClickListener { if (kumoActive) kumoNudge(+1) else nudgeTemp(+1) }
         findViewById<View>(R.id.acMode).setOnClickListener {
+            if (kumoActive) { kumoNextMode(); return@setOnClickListener }
             val d = acDevice ?: return@setOnClickListener
             // Cielo's API silently ignores "auto" on these units, so the button is a cool/heat toggle.
             val next = if (d.mode.equals("cool", ignoreCase = true)) "heat" else "cool"
@@ -1452,6 +1681,7 @@ class MainActivity : Activity() {
             sendAc("mode", changes)
         }
         findViewById<View>(R.id.acFan).setOnClickListener {
+            if (kumoActive) { kumoNextFan(); return@setOnClickListener }
             val d = acDevice ?: return@setOnClickListener
             val order = d.fanLevelsFor(d.mode).ifEmpty { CieloClient.FAN_ORDER }
             val next = order[(order.indexOf(d.fan.lowercase()) + 1).mod(order.size)]
@@ -1478,6 +1708,7 @@ class MainActivity : Activity() {
     private fun asNumber(v: Double): Any = if (v == Math.floor(v)) v.toInt() else v
 
     private fun refreshAc(force: Boolean) {
+        if (kumoActive) { refreshKumo(force); return }
         val key = prefs.cieloApiKey
         if (key.isBlank()) {
             acCard.visibility = View.GONE
@@ -1562,6 +1793,8 @@ class MainActivity : Activity() {
         const val AC_REFRESH_MS = 2 * 60_000L
         const val AC_TICK_MS = 30_000L
         const val AC_RESYNC_MS = 8_000L
+        const val KUMO_REFRESH_MS = 30_000L
+        const val KUMO_RESYNC_MS = 2_500L
         const val MAX_EVENT_CARDS = 40
         const val MAX_NEWS_CARDS = 30
         const val NEWS_REFRESH_MS = 30 * 60_000L

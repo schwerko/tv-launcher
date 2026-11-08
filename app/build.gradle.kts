@@ -25,8 +25,8 @@ android {
         applicationId = "com.azura.tvlauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.5.1"
+        versionCode = 17
+        versionName = "1.6.0"
 
         // Phones and tablets are supported too (the launcher works as a kiosk-style home screen
         // there), so Android TV is optional by default. `-PtvOnly=true` builds a TV-only bundle.
@@ -89,4 +89,6 @@ dependencies {
     // QR code for the "Set up from your phone" screen.
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM tests (android.jar only has stubs).
+    testImplementation("org.json:json:20240303")
 }

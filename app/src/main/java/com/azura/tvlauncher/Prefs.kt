@@ -120,4 +120,22 @@ class Prefs(context: Context) {
     var theme: String
         get() = sp.getString("theme", "photo") ?: "photo"
         set(value) = sp.edit().putString("theme", value).apply()
+
+    /** Mitsubishi Comfort (Kumo) indoor units with their local-control secrets, as a JSON array. */
+    var kumoUnits: List<KumoClient.Unit>
+        get() = runCatching {
+            val a = org.json.JSONArray(sp.getString("kumo_units", "[]") ?: "[]")
+            (0 until a.length()).map { KumoClient.Unit.fromJson(a.getJSONObject(it)) }
+        }.getOrDefault(emptyList())
+        set(value) = sp.edit().putString("kumo_units", org.json.JSONArray().apply { value.forEach { put(it.toJson()) } }.toString()).apply()
+
+    /** Serial of the Mitsubishi unit last shown on the card. */
+    var kumoSelected: String
+        get() = sp.getString("kumo_selected", "") ?: ""
+        set(value) = sp.edit().putString("kumo_selected", value).apply()
+
+    /** Mitsubishi Comfort account email, remembered to pre-fill the next sign-in (the password is never stored). */
+    var kumoEmail: String
+        get() = sp.getString("kumo_email", "") ?: ""
+        set(value) = sp.edit().putString("kumo_email", value.trim()).apply()
 }

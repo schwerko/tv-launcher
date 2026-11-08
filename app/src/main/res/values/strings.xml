@@ -151,4 +151,25 @@
     <string name="theme_title">Theme</string>
     <string name="theme_photo">Photo (background photos, blue)</string>
     <string name="theme_dark">Dark (black-and-white photos, grey cards)</string>
+    <string name="setting_kumo">Mitsubishi Comfort AC: %1$s</string>
+    <plurals name="kumo_units">
+        <item quantity="one">%1$d unit</item>
+        <item quantity="other">%1$d units</item>
+    </plurals>
+    <string name="kumo_title">Mitsubishi Comfort air conditioners</string>
+    <string name="kumo_title_units">Mitsubishi Comfort: %1$s</string>
+    <string name="kumo_sign_in">Sign in and set up units…</string>
+    <string name="kumo_find_again">Find the units on the network again</string>
+    <string name="kumo_forget">Forget these units</string>
+    <string name="kumo_email_prompt">Mitsubishi Comfort account email</string>
+    <string name="kumo_password_prompt">Mitsubishi Comfort password (used once, not stored)</string>
+    <string name="kumo_signing_in">Signing in to Mitsubishi Comfort and fetching your units (up to a minute)…</string>
+    <string name="kumo_searching_long">Looking for the units on your network…</string>
+    <string name="kumo_searching">Searching</string>
+    <string name="kumo_found_at">found at %1$s</string>
+    <string name="kumo_not_found">not found on this network yet; check it is powered and online, then use “Find the units on the network again”</string>
+    <string name="kumo_skipped">%1$d unit(s) on the account gave no local key from Mitsubishi\'s cloud and were left out. Signing in again later usually fetches it.</string>
+    <string name="kumo_no_keys">Signed in, but Mitsubishi\'s cloud did not hand out the units\' local keys this time. Try again in a few minutes; the units must be online in the Mitsubishi Comfort app.</string>
+    <string name="kumo_setup_failed">Mitsubishi Comfort setup failed: %1$s</string>
+    <string name="kumo_error">The air conditioner didn\'t respond</string>
 </resources>

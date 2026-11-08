@@ -43,6 +43,18 @@ recommendations, no accounts.
   key at home.cielowigle.com (menu › Home Assistant) and enter it under Settings › Cielo AC.
   A key signs in only once, so the app keeps the token it receives; if you ever reinstall from
   scratch (or clear the app's data), revoke the key and generate a new one (3 per month).
+- Mitsubishi Comfort air conditioners (Mitsubishi Electric mini-splits with the Kumo Cloud Wi-Fi
+  adapter, managed in the "Mitsubishi Comfort" app): the same air-conditioner card, controlling
+  the units directly on the home network. Settings › Mitsubishi Comfort AC › "Sign in and set up
+  units" (or the phone setup page) asks for the Comfort account email and password once: the TV
+  signs in to Mitsubishi's Kumo Cloud V3 service, reads each indoor unit's local-control key
+  (password and crypto serial), finds the adapters on the network by asking every host with port
+  80 open, and then forgets the account password. Commands are signed HTTP requests to each
+  adapter (`PUT /api?m=<token>`), the protocol of [pykumo](https://github.com/dlarrick/pykumo)
+  (MIT), which Home Assistant's Mitsubishi Comfort integration also uses. Press the unit name to
+  switch between units; power, temperature (°F or °C, half-degree steps), mode (cool, heat, dry,
+  fan, auto as each unit supports) and fan speed. If an adapter changes address it is looked up
+  again automatically. When Mitsubishi units are set up they take the card over from Cielo.
 - Now playing: while Spotify, YouTube or any other app is playing or paused, a card shows the
   track, artist and album art with previous / play-pause / next buttons; press the title to
   jump into the app. It reads the device's media sessions, which Android only allows for apps
@@ -258,6 +270,7 @@ Focus the **Settings** button at the top right and press OK:
   key), or your own image URLs (shown in black and white with the Dark theme).
 - Ask uses / Gemini key / Claude key: pick the model and paste its key.
 - Cielo AC: paste the API key (changing it forgets the old token and unit).
+- Mitsubishi Comfort AC: sign in once to set up units, find them on the network again, or forget them.
 - Set up from your phone…: the QR-code page for pasting links and keys from a phone.
 - Show hidden apps: unhides everything you've hidden.
 - Android settings / Choose default launcher: shortcuts into system settings.

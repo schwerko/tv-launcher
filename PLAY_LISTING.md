@@ -25,7 +25,7 @@ Everything the Play Console asks for when the app is submitted, ready to paste. 
 > • Two themes, under Settings > Theme: Photo (colour background photos, glass cards, blue accents) or Dark (the same photos in black and white, grey glass cards, white text).
 > • Screensaver: a full-screen slideshow of those photos with a clock and captions.
 > • Ask: press one button, speak or type a question, and get an answer from Google Gemini (free key) or Claude (paid key, with live web search). Titles the answer mentions open directly in Netflix, HBO Max, Apple TV, Disney+, Prime Video or YouTube.
-> • Cielo mini-split air-conditioner card: power, temperature, mode and fan, with the room's temperature and humidity.
+> • Air-conditioner card for Mitsubishi Electric mini-splits with the Mitsubishi Comfort (Kumo) Wi-Fi adapter, or Cielo controllers: power, temperature, mode and fan for each room, with the room temperature. Mitsubishi units are controlled directly on your home network.
 > • Now playing: what Spotify, YouTube or any app is playing, with play/pause and skip.
 > • Sunrise and sunset for your weather city.
 > • News you watch, not read: headlines from sources you choose (BBC, NPR, ESPN and more, or any RSS address); press one and YouTube plays the coverage.
@@ -87,6 +87,7 @@ Data types to declare (all **optional**, all **shared**, purpose **App functiona
 | App activity › Other user-generated content | The questions the user types or speaks in the Ask panel. | Google (Gemini), Anthropic |
 | Personal info › Other info | API keys the user enters (Gemini, Anthropic, Cielo, Unsplash); each is sent only to the service that issued it. | Google, Anthropic, Cielo, Unsplash |
 | App activity › Other actions | Air-conditioner commands (power, temperature, mode, fan). | Cielo |
+| Personal info › Other info | Mitsubishi Comfort account email and password, sent once during setup to sign in and read the indoor units' local keys (the password is not stored). | Mitsubishi Electric (Kumo Cloud) |
 | Personal info › Other info | The Home Assistant access token the user created, sent only to the user's own Home Assistant server at the address they typed. | The user's own server |
 | App activity › Other actions | Home Assistant toggle / scene commands the user presses. | The user's own server |
 

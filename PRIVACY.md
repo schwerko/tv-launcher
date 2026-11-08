@@ -1,6 +1,6 @@
 # TV Launcher privacy policy
 
-_Last updated: 2 November 2026. Applies to the Android TV app "TV Launcher" (package `com.azura.tvlauncher`)._
+_Last updated: 7 November 2026. Applies to the Android TV app "TV Launcher" (package `com.azura.tvlauncher`)._
 
 ## The short version
 
@@ -20,6 +20,8 @@ Each feature below is optional. Nothing is sent until you set it up, except the 
 | What's on tonight | The assistant you chose for Ask (Google Gemini or Anthropic Claude, as below) | Once a day: today's date, the weather city and the interests you ticked (e.g. "Sports, Comedy"), asking for three viewing suggestions. | As for Ask |
 | Home Assistant row | Your own Home Assistant server, at the address you typed (usually on your home network) | The access token you created there, requests for entity states, and the toggle/run commands you press. The developer has no access to it. | Your own server |
 | Cielo air-conditioner card | Cielo Connect API (`api.smartcielo.com`) | The Cielo API key you entered, the access token Cielo issues for it, and the commands you press (power, temperature, mode, fan). | https://www.cielowigle.com/privacy-policy |
+| Mitsubishi Comfort air conditioners (setup) | Mitsubishi Electric Kumo Cloud (`app-prod.kumocloud.com`, `socket-prod.kumocloud.com`) | Only when you run setup: your Mitsubishi Comfort email and password, to sign in and read each indoor unit's local-control key. The password is used for that sign-in and not stored. | https://www.mitsubishicomfort.com/privacy-policy |
+| Mitsubishi Comfort air conditioners (control) | The Wi-Fi adapters in your own indoor units, on your home network | Status requests and the commands you press (power, temperature, mode, fan), signed with each unit's key. Nothing goes through the internet. | — |
 | Ask (Gemini) | Google Generative Language API (`generativelanguage.googleapis.com`) | Your Gemini API key and the question you typed or spoke, plus the weather city as context. | https://policies.google.com/privacy |
 | Ask (Claude) | Anthropic API (`api.anthropic.com`) | Your Anthropic API key and the question, plus the weather city. Anthropic may run a web search to answer. | https://www.anthropic.com/privacy |
 | Background photos (default) and screensaver | Wikimedia Commons (`commons.wikimedia.org`, `upload.wikimedia.org`) | A request for recent "Picture of the day" images. Nothing about you. | https://foundation.wikimedia.org/wiki/Policy:Privacy_policy |
@@ -40,6 +42,7 @@ Stored in the app's private storage, readable only by the app:
 - calendar feed addresses and news feed addresses;
 - API keys for Gemini, Anthropic, Cielo and Unsplash, and the Cielo access token;
 - the Home Assistant address, access token and chosen entities;
+- the Mitsubishi Comfort account email, and each indoor unit's name, local-control key and network address (not the account password);
 - the day's "What's on tonight" lines and the interests you ticked;
 - a cache of news thumbnails and the last headlines of each source;
 - which apps you hid or pinned, and the last air-conditioner unit shown;
