@@ -43,18 +43,22 @@ recommendations, no accounts.
   key at home.cielowigle.com (menu › Home Assistant) and enter it under Settings › Cielo AC.
   A key signs in only once, so the app keeps the token it receives; if you ever reinstall from
   scratch (or clear the app's data), revoke the key and generate a new one (3 per month).
-- Mitsubishi Comfort air conditioners (Mitsubishi Electric mini-splits with the Kumo Cloud Wi-Fi
-  adapter, managed in the "Mitsubishi Comfort" app): the same air-conditioner card, controlling
-  the units directly on the home network. Settings › Mitsubishi Comfort AC › "Sign in and set up
-  units" (or the phone setup page) asks for the Comfort account email and password once: the TV
-  signs in to Mitsubishi's Kumo Cloud V3 service, reads each indoor unit's local-control key
-  (password and crypto serial), finds the adapters on the network by asking every host with port
-  80 open, and then forgets the account password. Commands are signed HTTP requests to each
-  adapter (`PUT /api?m=<token>`), the protocol of [pykumo](https://github.com/dlarrick/pykumo)
-  (MIT), which Home Assistant's Mitsubishi Comfort integration also uses. Press the unit name to
-  switch between units; power, temperature (°F or °C, half-degree steps), mode (cool, heat, dry,
-  fan, auto as each unit supports) and fan speed. If an adapter changes address it is looked up
-  again automatically. When Mitsubishi units are set up they take the card over from Cielo.
+- Mitsubishi Comfort air conditioners (Mitsubishi Electric mini-splits with the Kumo Wi-Fi
+  adapter, managed in the "Mitsubishi Comfort" app): the same air-conditioner card. Settings ›
+  Mitsubishi Comfort AC › "Sign in and set up units" (or the phone setup page) asks for the
+  Comfort account email and password once. The TV signs in to Mitsubishi's Kumo Cloud V3 service
+  and lists the indoor units. Where the cloud still hands out a unit's local-control key, that
+  unit is controlled directly on the home network (signed `PUT /api?m=<token>` requests, the
+  protocol of [pykumo](https://github.com/dlarrick/pykumo), MIT). Mitsubishi no longer hands those
+  keys out for newer accounts, so such units are controlled through the cloud instead, exactly as
+  the Comfort app does: status from `GET /v3/devices/{serial}`, commands to
+  `POST /v3/devices/send-command` (documented by
+  [ventz/kumo-cloud-v3-api-comfort-client](https://github.com/ventz/kumo-cloud-v3-api-comfort-client),
+  MIT). The password is never stored; the TV keeps the account's refresh token, which renews itself
+  on use (about 30 days without use and it asks for a new sign-in). Press the unit name to switch
+  units; power, temperature (°F or °C, half-degree steps), mode (cool, heat, dry, fan, auto as each
+  unit supports) and fan speed, with room temperature and, when reported, humidity. When
+  Mitsubishi units are set up they take the card over from Cielo.
 - Now playing: while Spotify, YouTube or any other app is playing or paused, a card shows the
   track, artist and album art with previous / play-pause / next buttons; press the title to
   jump into the app. It reads the device's media sessions, which Android only allows for apps

@@ -1459,7 +1459,7 @@ class MainActivity : Activity() {
                 val st = if (!u.viaCloud() && u.address.isBlank()) null else kumoStatusOf(u)
                 if (st == null) { statuses.remove(u.serial); if (!u.viaCloud()) missing = true; continue }
                 statuses[u.serial] = st
-                if (st.power) kumoLastMode[u.serial] = st.mode
+                if (st.power) kumoLastMode[u.serial] = KumoClient.baseMode(st.mode)
                 if (u.serial !in kumoProfiles) kumoProfileOf(u)?.let { kumoProfiles = kumoProfiles + (u.serial to it) }
             }
             kumoStatus = statuses
@@ -1558,8 +1558,10 @@ class MainActivity : Activity() {
 
     private fun kumoNextMode() {
         val u = kumoUnit ?: return
-        val modes = kumoProfiles[u.serial]?.modes ?: listOf("cool", "heat")
-        val current = kumoStatus[u.serial]?.mode?.takeIf { it != "off" } ?: kumoLastMode[u.serial] ?: modes.last()
+        val current = kumoStatus[u.serial]?.mode?.takeIf { it != "off" }?.let { KumoClient.baseMode(it) } ?: kumoLastMode[u.serial] ?: "cool"
+        val known = kumoProfiles[u.serial]?.modes ?: listOf("cool", "heat")
+        // A unit running auto supports it even when its profile doesn't say so.
+        val modes = if (current == "auto" && "auto" !in known) known + "auto" else known
         val next = modes[(modes.indexOf(current) + 1).mod(modes.size)]
         kumoLastMode[u.serial] = next
         kumoCommand({ it.copy(mode = next) }, { KumoClient.setMode(it, next) }) { c, s -> c.setMode(s, next) }
@@ -1579,11 +1581,11 @@ class MainActivity : Activity() {
         if (!st.power) return
         val current = st.setPoint() ?: return
         val p = kumoProfiles[u.serial]
-        val (lo, hi) = if (st.mode == "heat") (p?.minHeat ?: 10.0) to (p?.maxHeat ?: 31.0) else (p?.minCool ?: 16.0) to (p?.maxCool ?: 31.0)
+        val (lo, hi) = if (st.heating) (p?.minHeat ?: 10.0) to (p?.maxHeat ?: 31.0) else (p?.minCool ?: 16.0) to (p?.maxCool ?: 31.0)
         val next = (if (prefs.fahrenheit) KumoClient.fToC((KumoClient.cToF(current) + delta).toDouble()) else current + delta * 0.5)
             .coerceIn(lo, hi)
         if (next == current) return
-        kumoCommand({ if (st.mode == "heat") it.copy(spHeat = next) else it.copy(spCool = next) },
+        kumoCommand({ if (st.heating) it.copy(spHeat = next) else it.copy(spCool = next) },
             { KumoClient.setSetPoint(it, st.mode, next) }) { c, s -> c.setSetPoint(s, st.mode, next) }
     }
 

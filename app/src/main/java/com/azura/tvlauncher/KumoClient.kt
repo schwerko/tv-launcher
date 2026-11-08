@@ -69,7 +69,14 @@ object KumoClient {
     ) {
         val power: Boolean get() = mode.isNotBlank() && mode != "off"
         /** The set point the current mode uses. */
-        fun setPoint(): Double? = when (mode) { "heat" -> spHeat; "cool", "dry" -> spCool; "auto" -> spCool ?: spHeat; else -> null }
+        fun setPoint(): Double? = when (mode) {
+            "heat", "autoHeat" -> spHeat
+            "cool", "dry", "autoCool" -> spCool
+            "auto" -> spCool ?: spHeat
+            else -> null
+        }
+        /** Which set point the current mode uses: auto reports itself as autoCool or autoHeat. */
+        val heating: Boolean get() = mode == "heat" || mode == "autoHeat"
     }
 
     data class Profile(
@@ -195,7 +202,7 @@ object KumoClient {
 
     /** Sets the set point the given mode uses ("heat" -> spHeat, otherwise spCool). */
     suspend fun setSetPoint(unit: Unit, mode: String, celsius: Double): Boolean {
-        val key = if (mode == "heat") "spHeat" else "spCool"
+        val key = if (mode == "heat" || mode == "autoHeat") "spHeat" else "spCool"
         return request(unit, """{"c":{"indoorUnit":{"status":{"$key":${"%.1f".format(java.util.Locale.US, celsius)}}}}}""") != null
     }
 
@@ -522,7 +529,7 @@ object KumoClient {
 
         /** The cloud accepts set points in 0.5 °C steps only. */
         suspend fun setSetPoint(serial: String, mode: String, celsius: Double) =
-            send(serial, JSONObject().put(if (mode == "heat") "spHeat" else "spCool", Math.round(celsius * 2) / 2.0))
+            send(serial, JSONObject().put(if (mode == "heat" || mode == "autoHeat") "spHeat" else "spCool", Math.round(celsius * 2) / 2.0))
     }
 
     // ---- helpers -----------------------------------------------------------------------------
@@ -539,7 +546,13 @@ object KumoClient {
     fun fToC(f: Double): Double = Math.round((f - 32) * 5 / 9 * 2) / 2.0
     fun cToF(c: Double): Int = Math.round(c * 9 / 5 + 32).toInt()
 
-    fun modeLabel(mode: String) = when (mode) { "vent" -> "Fan"; "dry" -> "Dry"; "auto" -> "Auto"; "heat" -> "Heat"; "cool" -> "Cool"; "off" -> "Off"; else -> mode }
+    fun modeLabel(mode: String) = when (mode) {
+        "vent" -> "Fan"; "dry" -> "Dry"; "auto", "autoCool", "autoHeat" -> "Auto"; "heat" -> "Heat"; "cool" -> "Cool"; "off" -> "Off"
+        else -> mode.replaceFirstChar { it.uppercase() }
+    }
+
+    /** autoCool / autoHeat are the unit's report of auto mode; commands use "auto". */
+    fun baseMode(mode: String) = if (mode.startsWith("auto")) "auto" else mode
     fun fanLabel(speed: String) = when (speed) {
         "superQuiet" -> "Quiet+"; "quiet" -> "Quiet"; "low" -> "Low"; "powerful" -> "High"; "superPowerful" -> "Max"; "auto" -> "Auto"; else -> speed
     }
