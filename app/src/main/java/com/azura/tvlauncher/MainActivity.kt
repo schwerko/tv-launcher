@@ -1582,18 +1582,22 @@ class MainActivity : Activity() {
     /** Signs in once, fetches each unit's local key, finds the units on the network, forgets the password. */
     private fun setupKumo(email: String, password: String) {
         prefs.kumoEmail = email
-        Toast.makeText(this, R.string.kumo_signing_in, Toast.LENGTH_LONG).show()
+        // A dialog rather than a toast: setup takes up to a minute and its outcome must not be missed.
+        val progress = dialog().setTitle(R.string.kumo_title).setMessage(R.string.kumo_signing_in).setCancelable(false).show()
         scope.launch {
             try {
+                android.util.Log.i("Kumo", "setup: signing in")
                 val fetched = KumoClient.fetchUnits(email, password)
                 val usable = fetched.filter { it.password.isNotBlank() && it.cryptoSerial.isNotBlank() }
+                android.util.Log.i("Kumo", "setup: ${fetched.size} unit(s) on the account, ${usable.size} with local keys")
                 if (usable.isEmpty()) {
                     dialog().setTitle(R.string.kumo_title).setMessage(R.string.kumo_no_keys)
                         .setPositiveButton(android.R.string.ok, null).show()
                     return@launch
                 }
-                Toast.makeText(this@MainActivity, R.string.kumo_searching_long, Toast.LENGTH_LONG).show()
+                progress.setMessage(getString(R.string.kumo_searching_long))
                 val located = KumoClient.locate(usable)
+                android.util.Log.i("Kumo", "setup: located ${located.count { it.address.isNotBlank() }}/${located.size}")
                 kumoUnits = located
                 prefs.kumoUnits = located
                 if (located.none { it.serial == prefs.kumoSelected }) prefs.kumoSelected = located.first().serial
@@ -1601,10 +1605,15 @@ class MainActivity : Activity() {
                 refreshKumo(force = true)
                 kumoReport(skipped = fetched.size - usable.size)
             } catch (e: KumoClient.AuthException) {
-                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+                android.util.Log.w("Kumo", "setup: sign-in rejected")
+                dialog().setTitle(R.string.kumo_title).setMessage(getString(R.string.kumo_rejected, email))
+                    .setPositiveButton(android.R.string.ok, null).show()
             } catch (e: Exception) {
                 android.util.Log.w("Kumo", "setup failed", e)
-                Toast.makeText(this@MainActivity, getString(R.string.kumo_setup_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
+                dialog().setTitle(R.string.kumo_title).setMessage(getString(R.string.kumo_setup_failed, e.message ?: e.javaClass.simpleName))
+                    .setPositiveButton(android.R.string.ok, null).show()
+            } finally {
+                runCatching { progress.dismiss() }
             }
         }
     }

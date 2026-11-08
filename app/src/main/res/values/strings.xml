@@ -171,5 +171,6 @@
     <string name="kumo_skipped">%1$d unit(s) on the account gave no local key from Mitsubishi\'s cloud and were left out. Signing in again later usually fetches it.</string>
     <string name="kumo_no_keys">Signed in, but Mitsubishi\'s cloud did not hand out the units\' local keys this time. Try again in a few minutes; the units must be online in the Mitsubishi Comfort app.</string>
     <string name="kumo_setup_failed">Mitsubishi Comfort setup failed: %1$s</string>
+    <string name="kumo_rejected">Mitsubishi Comfort didn\'t accept the email or password.\n\nEmail used: %1$s\n\nUse the same email and password as in the Mitsubishi Comfort app, then try “Sign in and set up units” again.</string>
     <string name="kumo_error">The air conditioner didn\'t respond</string>
 </resources>
