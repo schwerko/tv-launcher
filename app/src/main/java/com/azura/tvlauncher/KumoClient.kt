@@ -274,18 +274,23 @@ object KumoClient {
         for (serial in units.keys.toList()) {
             val st = http("GET", "$V3/v3/devices/$serial/status", access)
             if (st.first !in 200..299) Log.w(TAG, "device status HTTP ${st.first}")
-            val crypto = runCatching { JSONObject(st.second).optString("cryptoSerial") }.getOrDefault("")
+            val stJson = runCatching { JSONObject(st.second) }.getOrNull()
+            if (stJson != null) Log.i(TAG, "device status shape: ${shape(stJson)}")
+            val crypto = stJson?.let { findString(it, CRYPTO_KEYS) }.orEmpty()
             units[serial] = units.getValue(serial).copy(cryptoSerial = crypto)
         }
         Log.i(TAG, "crypto serials: ${units.values.count { it.cryptoSerial.isNotBlank() }}/${units.size}")
-        val passwords = passwordsViaSocket(access, units.keys)
-        Log.i(TAG, "adapter keys: ${passwords.size}/${units.size}")
-        units.values.map { it.copy(password = passwords[it.serial].orEmpty()) }
+        val fromSocket = passwordsViaSocket(access, units.keys)
+        Log.i(TAG, "adapter keys: ${fromSocket.count { it.value.first.isNotBlank() }}/${units.size}")
+        units.values.map { u ->
+            val (pw, crypto) = fromSocket[u.serial] ?: ("" to "")
+            u.copy(password = pw, cryptoSerial = u.cryptoSerial.ifBlank { crypto })
+        }
     }
 
     /** The cloud hands out adapter passwords only as "adapter_update" events over Socket.IO. */
-    private fun passwordsViaSocket(access: String, serials: Set<String>): Map<String, String> {
-        val out = HashMap<String, String>()
+    private fun passwordsViaSocket(access: String, serials: Set<String>): Map<String, Pair<String, String>> {
+        val out = HashMap<String, Pair<String, String>>()
         val cookies = HashMap<String, String>()
         val hs = sio("GET", null, access, null, cookies)
         if (!hs.startsWith("0")) { Log.w(TAG, "socket handshake failed: ${hs.take(80)}"); return out }
@@ -299,7 +304,7 @@ object KumoClient {
         post(serials.joinToString("\u001e") { """42["force_adapter_request","$it","adapterStatus"]""" })
         post((listOf("""42["device_status_v2",""]""") + serials.map { """42["device_status_v2","$it"]""" }).joinToString("\u001e"))
         val deadline = System.currentTimeMillis() + 60_000
-        while (System.currentTimeMillis() < deadline && !out.keys.containsAll(serials)) {
+        while (System.currentTimeMillis() < deadline && !serials.all { out[it]?.first?.isNotBlank() == true }) {
             val text = runCatching { poll() }.getOrNull() ?: break
             if (text.split('\u001e').any { it == "2" }) runCatching { post("3") }
         }
@@ -317,17 +322,55 @@ object KumoClient {
         }
     }
 
-    private fun extract(raw: String, serials: Set<String>, out: MutableMap<String, String>) {
+    /**
+     * Picks each unit's adapter password (and crypto serial, if present) out of any event that
+     * mentions the unit. Field names and nesting are searched rather than assumed, because they
+     * differ between Kumo Cloud versions; each event's shape (keys, never values) is logged once.
+     */
+    private fun extract(raw: String, serials: Set<String>, out: MutableMap<String, Pair<String, String>>) {
         for (part in raw.split('\u001e')) {
             var msg = part
             if (msg.contains(':') && msg.substringBefore(':').all { it.isDigit() } && msg.substringBefore(':').isNotEmpty()) msg = msg.substringAfter(':')
             if (!msg.startsWith("42")) continue
             val arr = runCatching { JSONArray(msg.substring(2)) }.getOrNull() ?: continue
-            if (arr.optString(0) != "adapter_update") continue
-            val o = arr.optJSONObject(1) ?: continue
-            val serial = o.optString("deviceSerial"); val pw = o.optString("password")
-            if (serial in serials && pw.isNotBlank()) out[serial] = pw
+            val name = arr.optString(0)
+            val body = arr.opt(1) ?: continue
+            if (name in setOf("adapter_update", "device_update", "device_status_v2") && loggedShapes.add(name)) Log.i(TAG, "$name shape: ${shape(body)}")
+            val serial = findString(body, listOf("deviceSerial", "serial", "serialNumber")).orEmpty()
+            if (serial !in serials) continue
+            val pw = findString(body, PASSWORD_KEYS).orEmpty()
+            val crypto = findString(body, CRYPTO_KEYS).orEmpty()
+            val prev = out[serial] ?: ("" to "")
+            out[serial] = prev.first.ifBlank { pw } to prev.second.ifBlank { crypto }
         }
+    }
+
+    private val loggedShapes = HashSet<String>()
+    private val PASSWORD_KEYS = listOf("password", "adapterPassword", "localPassword", "devicePassword")
+    private val CRYPTO_KEYS = listOf("cryptoSerial", "crypto_serial", "cryptoSerialNumber")
+
+    /** First non-blank string under any of [keys], searching nested objects and arrays. */
+    private fun findString(node: Any?, keys: List<String>, depth: Int = 0): String? {
+        if (depth > 6) return null
+        when (node) {
+            is JSONObject -> {
+                for (k in keys) node.optString(k).takeIf { node.has(k) && it.isNotBlank() && it != "null" }?.let { return it }
+                for (k in node.keys()) findString(node.opt(k), keys, depth + 1)?.let { return it }
+            }
+            is JSONArray -> for (i in 0 until node.length()) findString(node.opt(i), keys, depth + 1)?.let { return it }
+        }
+        return null
+    }
+
+    /** Structure only, for the log: keys with value types and string lengths, never the values. */
+    private fun shape(node: Any?, depth: Int = 0): String = when {
+        depth > 3 -> "…"
+        node is JSONObject -> node.keys().asSequence().take(40).joinToString(",", "{", "}") { k -> "$k:" + shape(node.opt(k), depth + 1) }
+        node is JSONArray -> "[" + (if (node.length() > 0) shape(node.opt(0), depth + 1) else "") + "]x${node.length()}"
+        node is String -> "s${node.length}"
+        node is Number -> "n"
+        node is Boolean -> "b"
+        else -> "null"
     }
 
     private fun userId(access: String): String? = runCatching {
