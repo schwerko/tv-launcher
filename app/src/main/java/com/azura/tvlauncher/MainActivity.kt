@@ -865,7 +865,8 @@ class MainActivity : Activity() {
         scope.launch {
             val bitmap = WallpaperService.load(this@MainActivity, photo, dm.widthPixels, dm.heightPixels)
             if (bitmap != null && prefs.wallpaper == wallpaperSource) {
-                showBackground(bitmap)
+                val dark = isDark
+                showBackground(withContext(Dispatchers.Default) { bakeBackground(bitmap, dark) })
                 // Free-licence and Unsplash photos must carry their credit wherever they are shown.
                 wallpaperCredit.text = photo.credit
                 wallpaperCredit.visibility = if (photo.credit.isBlank()) View.GONE else View.VISIBLE
@@ -873,15 +874,29 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showBackground(bitmap: Bitmap) {
-        val photo = BitmapDrawable(resources, bitmap).apply {
-            // The Dark theme shows the same photos in black and white.
-            if (isDark) colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix().apply { setSaturation(0f) })
+    /**
+     * Flattens photo + theme tint + scrim into ONE opaque bitmap, off the UI thread. Drawing the
+     * layers separately (and both pictures of a finished cross-fade) on every frame made the GPU
+     * the bottleneck on TV boxes: ~110 ms a frame on a Google TV Streamer versus ~10 ms flattened.
+     */
+    private fun bakeBackground(photo: Bitmap, dark: Boolean): Bitmap {
+        val out = Bitmap.createBitmap(photo.width, photo.height, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+        // The Dark theme shows the same photos in black and white.
+        if (dark) paint.colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix().apply { setSaturation(0f) })
+        canvas.drawBitmap(photo, 0f, 0f, paint)
+        ContextCompat.getDrawable(this, R.drawable.scrim)!!.apply {
+            setBounds(0, 0, out.width, out.height)
+            draw(canvas)
         }
-        val next = LayerDrawable(arrayOf(
-            photo,
-            ContextCompat.getDrawable(this, R.drawable.scrim)!!,
-        ))
+        out.setHasAlpha(false)   // opaque: lets the window and the compositor skip blending
+        photo.recycle()
+        return out
+    }
+
+    private fun showBackground(baked: Bitmap) {
+        val next = BitmapDrawable(resources, baked)
         val previous = currentBackground
         if (previous == null) {
             window.setBackgroundDrawable(next)
@@ -889,6 +904,10 @@ class MainActivity : Activity() {
             val transition = TransitionDrawable(arrayOf(previous, next)).apply { isCrossFadeEnabled = false }
             window.setBackgroundDrawable(transition)
             transition.startTransition(CROSSFADE_MS)
+            // Once the fade is over, keep only the new picture so one bitmap is drawn per frame.
+            handler.postDelayed({
+                if (currentBackground === next) window.setBackgroundDrawable(next)
+            }, CROSSFADE_MS + 200L)
         }
         currentBackground = next
     }
